@@ -6,6 +6,11 @@ import (
 )
 
 func SetupRoutes(r *gin.Engine) {
+	registerBookRoutes(r)
+	registerUtilityRoutes(r)
+}
+
+func registerBookRoutes(r *gin.Engine) {
 	books := r.Group("/books")
 	{
 		books.GET("", handlers.GetBooks)
@@ -14,4 +19,8 @@ func SetupRoutes(r *gin.Engine) {
 		books.PUT("/:id", handlers.UpdateBook)
 		books.DELETE("/:id", handlers.DeleteBook)
 	}
+}
+
+func registerUtilityRoutes(r *gin.Engine) {
+	r.POST("/process-url", handlers.ProcessURL)
 }

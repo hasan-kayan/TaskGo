@@ -1,33 +1,40 @@
 package main
 
 import (
-	"fmt"
+	"log"
 
-	"github.com/gin-contrib/cors" // ✅ CORS
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/hasan-kayan/TaskGo/database"
-	_ "github.com/hasan-kayan/TaskGo/docs"
 	"github.com/hasan-kayan/TaskGo/routes"
 
+	_ "github.com/hasan-kayan/TaskGo/docs"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
+// @title       TaskGo API
+// @version     1.0
+// @description API for managing books and processing URLs
+// @host        localhost:8080
+// @BasePath    /
 func main() {
-	fmt.Println("🚀 Starting TaskGo API...")
+	log.Println("🚀 Starting TaskGo API...")
+
+	// Just call it, don't assign it to a variable
 	database.ConnectDB()
 
-	r := gin.Default()
+	router := gin.Default()
+	router.Use(cors.Default())
 
-	// ✅ Enable CORS for all origins
-	r.Use(cors.Default())
+	// Swagger
+	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
-	// Swagger docs
-	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+	// Routes
+	routes.SetupRoutes(router)
 
-	// App routes
-	routes.SetupRoutes(r)
-
-	fmt.Println("🚦 Running on :8080")
-	r.Run(":8080")
+	log.Println("🚦 Server running at http://localhost:8080")
+	if err := router.Run(":8080"); err != nil {
+		log.Fatalf("❌ Server failed to start: %v", err)
+	}
 }
