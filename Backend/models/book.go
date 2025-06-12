@@ -46,6 +46,22 @@ type Book struct {
 	//
 	// example: 1937
 	Year int `json:"year"`
+	// ISBN is the International Standard Book Number.
+	//
+	// example: 978-3-16-148410-0
+	ISBN string `json:"isbn,omitempty"`
+	// Description provides a brief summary of the book.
+	// example: A fantasy novel about the adventures of Bilbo Baggins.
+	Description string `json:"description,omitempty"`
+	// CoverImageURL is the URL to the book's cover image.
+	// example: https://example.com/covers/the-hobbit.jpg
+	CoverImageURL string `json:"cover_image_url,omitempty"`
+	// Publisher is the name of the book's publisher.
+	// example: George Allen & Unwin
+	Publisher string `json:"publisher,omitempty"`
+	//Type is the genre or type of the book.
+	// example: Fantasy
+	Type string `json:"type,omitempty"`
 }
 
 // ErrorResponse is used for API error responses.
