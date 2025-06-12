@@ -13,7 +13,7 @@ func SuccessResponse(c *gin.Context, status int, message string, data interface{
 	})
 }
 
-// ErrorResponse sends an error message with details
+// ErrorResponse sends an error message
 func ErrorResponse(c *gin.Context, status int, message string, err error) {
 	c.JSON(status, gin.H{
 		"success": false,
@@ -22,7 +22,7 @@ func ErrorResponse(c *gin.Context, status int, message string, err error) {
 	})
 }
 
-// BasicMessage sends just a message (used for delete, etc.)
+// BasicMessage sends just a message
 func BasicMessage(c *gin.Context, status int, message string) {
 	c.JSON(status, gin.H{
 		"success": true,
