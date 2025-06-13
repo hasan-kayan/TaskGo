@@ -1,177 +1,160 @@
-# 📚 TaskGo – Book Management API
+# 📚 TaskGo API – Book Library & URL Processor (Golang)
 
-TaskGo is a fullstack developer assignment project built using **Golang** for the backend and designed to be paired with a **React/Next.js TypeScript** frontend. It provides full CRUD operations for managing a small book library, along with a URL cleanup and redirection microservice (Part 2).
+TaskGo is a full-featured backend application built with **Go**, **Gin**, and **GORM** that provides:
 
----
-
-## 🧩 Features
-
-### ✅ Book Management API
-- List all books
-- View a book by ID
-- Create new books
-- Update existing books
-- Delete books
-
-### ✅ URL Cleanup and Redirection Service *(Part 2 - pending)*
-
-### ✅ Swagger UI Documentation
-- Live interactive documentation at: [`/swagger/index.html`](http://localhost:8080/swagger/index.html)
-
-### ✅ Unit Tests
-- End-to-end CRUD test coverage via `httptest`
+- 📚 A RESTful CRUD API for managing books using **UUIDs**.
+- 🔗 A smart URL processing service that handles redirection and canonicalization.
+- 🧪 Complete test suite with high coverage.
+- 📖 Swagger-based API documentation.
+- 🔒 Built-in security features like **rate limiting**, validation, and structured logging.
 
 ---
 
-## 📦 Tech Stack
+## 🚀 Features
 
-| Layer      | Technology                |
-|------------|---------------------------|
-| Language   | Go (Golang)               |
-| Framework  | Gin Web Framework         |
-| ORM        | GORM                      |
-| Database   | SQLite (default)          |
-| Docs       | Swaggo Swagger Generator  |
-| Testing    | Go test + `httptest`      |
+### 📘 Book Library API
+- Create, read, update, delete books
+- Filter books by `title`, `author`, `year`, and `type`
+- Each book has a UUID primary key
+- Swagger documentation with models
+- Search-ready endpoints
+
+### 🔗 URL Processor
+- Canonical: removes query parameters and trailing slashes
+- Redirection: converts domain to `www.byfood.com`, lowercases the path
+- Combined operation: applies both
+
+### ⚙️ Tech Stack
+- **Gin** – HTTP web framework
+- **GORM** – ORM for SQLite with UUID support
+- **Swagger** – for interactive API documentation
+- **SQLite** – Local lightweight database
+- **Logrus** – Structured JSON logging
+- **Rate limiting** – Per-IP limit middleware
+- **Validator** – Backend field-level validation
 
 ---
 
-## 🚀 Getting Started
+## 📂 Project Structure
 
-### 1. Clone the Repository
+```bash
+.
+[hasankayan@AsisguardBluetooth Backend]$ tree
+.
+├── books.db
+├── database
+│   └── db.go
+├── Dockerfile
+├── docs
+│   ├── docs.go
+│   ├── swagger.json
+│   └── swagger.yaml
+├── go.mod
+├── go.sum
+├── handlers
+│   ├── book_handler.go
+│   ├── health_handler.go
+│   └── url_handler.go
+├── main.go
+├── middleware
+│   ├── logger.go
+│   └── rate_limiter.go
+├── models
+│   └── book.go
+├── README.md
+├── routes
+│   └── routes.go
+├── tests
+│   ├── books.db
+│   ├── book_test.go
+│   └── url_test.go
+└── utils
+    ├── response.go
+    └── validation.go
+
+
+''' 
+## 🛠️ Setup Instructions
+
+### 🧱 Prerequisites
+
+- Go ≥ 1.20
+- Git 
+- Docker (Optional)
+
+
+### ⚙️ Run Locally
+
 
 ```bash
 git clone https://github.com/hasan-kayan/TaskGo.git
-cd TaskGo
-```
+cd TaskGo/Backend
 
-### 2. Install Go Dependencies
-
-```bash
+# Install dependencies
 go mod tidy
-```
 
-### 3. Generate Swagger Docs
+# Generate Swagger docs
+swag init --parseDependency --parseInternal
 
-```bash
-swag init
-```
-
-This will generate the `docs/` folder with `swagger.json`.
-
----
-
-## ▶️ Run the Server
-
-```bash
+# Run the server
 go run main.go
-```
-
-The API will be available at:
 
 ```
-http://localhost:8080
+Server runs on: http://localhost:8080
+
+Than if you want to run unit tests
+
+```bash
+
+go test ./... -cover
+
 ```
 
-Swagger UI available at:
+
+## 🧾 API Endpoints 
+
+| Method | Endpoint      | Description               |
+| ------ | ------------- | ------------------------- |
+| GET    | `/books`      | List books (with filters) |
+| POST   | `/books`      | Create new book           |
+| GET    | `/books/{id}` | Get book by UUID          |
+| PUT    | `/books/{id}` | Update book by UUID       |
+| DELETE | `/books/{id}` | Delete book by UUID       |
+
+
+### Filters for /books:
+
+```bash
+/books?title=harry&author=rowling&year=2001&type=fantasy
+
+
+# For Curl Command 
+
 
 ```
-http://localhost:8080/swagger/index.html
-```
 
----
+### URL Processor
 
-## 🔁 API Endpoints
+| Method | Endpoint       | Description                    |
+| ------ | -------------- | ------------------------------ |
+| POST   | `/process-url` | Processes a URL with operation |
 
-| Method | Endpoint         | Description              |
-|--------|------------------|--------------------------|
-| GET    | `/books`         | List all books           |
-| GET    | `/books/:id`     | Get a book by ID         |
-| POST   | `/books`         | Create a new book        |
-| PUT    | `/books/:id`     | Update book by ID        |
-| DELETE | `/books/:id`     | Delete book by ID        |
-
-### 📘 Sample Book JSON
-
-```json
+```bash
 {
-  "title": "The Hobbit",
-  "author": "J.R.R. Tolkien",
-  "year": 1937
+    # Payload 
+  "url": "https://BYFOOD.com/page?ref=abc/",
+  "operation": "all"
 }
-```
-
----
-
-## 🧪 Running Tests
-
-```bash
-go test ./tests
-```
-
-This runs all unit tests located in the `tests/` directory.
-
----
-
-## 🧰 Project Structure
 
 ```
-TaskGo/
-├── main.go                 # Entry point
-├── go.mod / go.sum         # Go modules
-├── database/               # DB connection logic
-│   └── db.go
-├── models/                 # Book model + Swagger types
-│   └── book.go
-├── handlers/               # HTTP handlers (controllers)
-│   └── book_handler.go
-├── routes/                 # Route grouping
-│   └── routes.go
-├── utils/                  # Reusable response utilities
-│   └── response.go
-├── tests/                  # Test cases
-│   └── book_test.go
-├── docs/                   # Auto-generated Swagger docs
-├── README.md               # This file
-```
 
----
+Operations:
 
-## ✅ Dependencies Used
+    "canonical" → remove query params, trailing slash
 
-```bash
-go get github.com/gin-gonic/gin
-go get gorm.io/gorm
-go get gorm.io/driver/sqlite
-go get github.com/swaggo/swag/cmd/swag
-go get github.com/swaggo/gin-swagger
-go get github.com/swaggo/files
-```
+    "redirection" → lowercase path, change domain to www.byfood.com
 
----
+    "all" → apply both
 
-## 📌 Notes
 
-- Use `GIN_MODE=release` for production.
-- SQLite is used for simplicity. You can switch to PostgreSQL or MySQL by changing `gorm.Open(...)` in `db.go`.
 
----
-
-## 🛠️ TODOs
-
-- [ ] Implement Part 2: URL Cleanup and Redirection Service
-- [ ] Add CI workflow
-- [ ] Dockerize the service
-- [ ] Deploy on a cloud platform (e.g. Railway, Render, GCP)
-
----
-
-## 🧠 License
-
-This project is part of a fullstack developer assignment. Not licensed for commercial use.
-
----
-
-## 👤 Author
-
-- Hasan Kayan – [GitHub](https://github.com/hasan-kayan)
