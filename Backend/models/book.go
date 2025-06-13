@@ -9,59 +9,19 @@ import (
 //
 // swagger:model Book
 type Book struct {
-	// ID is the unique identifier for the book.
-	//
-	// required: true
-	// example: 1
-	ID uint `json:"id"`
+	ID        uint       `json:"id" gorm:"primaryKey"`
+	CreatedAt time.Time  `json:"created_at"`
+	UpdatedAt time.Time  `json:"updated_at"`
+	DeletedAt *time.Time `json:"deleted_at,omitempty" gorm:"index"`
 
-	// CreatedAt is the timestamp when the book was added.
-	//
-	// example: 2025-06-12T10:30:00Z
-	CreatedAt time.Time `json:"created_at"`
-
-	// UpdatedAt is the timestamp when the book was last updated.
-	//
-	// example: 2025-06-12T10:30:00Z
-	UpdatedAt time.Time `json:"updated_at"`
-
-	// DeletedAt is the timestamp when the book was deleted (if soft-deleted).
-	//
-	// example: null
-	DeletedAt *time.Time `json:"deleted_at,omitempty"`
-
-	// Title of the book.
-	//
-	// required: true
-	// example: The Hobbit
-	Title string `json:"title" binding:"required"`
-
-	// Author of the book.
-	//
-	// required: true
-	// example: J.R.R. Tolkien
-	Author string `json:"author" binding:"required"`
-
-	// Year of publication.
-	//
-	// example: 1937
-	Year int `json:"year"`
-	// ISBN is the International Standard Book Number.
-	//
-	// example: 978-3-16-148410-0
-	ISBN string `json:"isbn,omitempty"`
-	// Description provides a brief summary of the book.
-	// example: A fantasy novel about the adventures of Bilbo Baggins.
-	Description string `json:"description,omitempty"`
-	// CoverImageURL is the URL to the book's cover image.
-	// example: https://example.com/covers/the-hobbit.jpg
-	CoverImageURL string `json:"cover_image_url,omitempty"`
-	// Publisher is the name of the book's publisher.
-	// example: George Allen & Unwin
-	Publisher string `json:"publisher,omitempty"`
-	//Type is the genre or type of the book.
-	// example: Fantasy
-	Type string `json:"type,omitempty"`
+	Title         string `json:"title" binding:"required" validate:"required"`
+	Author        string `json:"author" binding:"required" validate:"required"`
+	Year          int    `json:"year" validate:"gte=0"`
+	ISBN          string `json:"isbn,omitempty" validate:"omitempty,len=10|len=13"`
+	Description   string `json:"description,omitempty"`
+	CoverImageURL string `json:"cover_image_url,omitempty" validate:"omitempty,url"`
+	Publisher     string `json:"publisher,omitempty"`
+	Type          string `json:"type,omitempty"`
 }
 
 // ErrorResponse is used for API error responses.
