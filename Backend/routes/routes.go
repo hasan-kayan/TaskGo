@@ -8,8 +8,11 @@ import (
 func SetupRoutes(r *gin.Engine) {
 	registerBookRoutes(r)
 	registerUtilityRoutes(r)
+	registerHealthRoutes(r) // 👈 add this
 }
-
+func registerHealthRoutes(r *gin.Engine) {
+	r.GET("/health", handlers.HealthCheck)
+}
 func registerBookRoutes(r *gin.Engine) {
 	books := r.Group("/books")
 	{

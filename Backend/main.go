@@ -34,9 +34,10 @@ func main() {
 
 	// --- Gin engine ---------------------------------------------------------
 	router := gin.New()
-	router.Use(gin.Recovery())      // panic-safe
-	router.Use(middleware.Logger()) // structured request logs
-	router.Use(cors.Default())      // permissive CORS; tighten if needed
+	router.Use(gin.Recovery())           // panic-safe
+	router.Use(middleware.Logger())      // structured request logs
+	router.Use(middleware.RateLimiter()) // Rate limetter
+	router.Use(cors.Default())           // permissive CORS; tighten if needed
 
 	// --- Swagger docs -------------------------------------------------------
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
