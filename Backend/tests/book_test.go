@@ -122,3 +122,28 @@ func TestDeleteBook(t *testing.T) {
 func TestCleanup(t *testing.T) {
 	_ = os.Remove("test.db")
 }
+func TestFilterBooks(t *testing.T) {
+	r := setupRouter()
+
+	// create a book to filter
+	book := models.Book{Title: "Test Filter", Author: "Somebody", Year: 2025}
+	database.DB.Create(&book)
+
+	req, _ := http.NewRequest("GET", "/books?title=filter", nil)
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("Expected status 200, got %d", w.Code)
+	}
+
+	var resp struct {
+		Success bool          `json:"success"`
+		Data    []models.Book `json:"data"`
+	}
+	json.Unmarshal(w.Body.Bytes(), &resp)
+
+	if len(resp.Data) == 0 {
+		t.Fatalf("Expected at least 1 book in filtered result")
+	}
+}

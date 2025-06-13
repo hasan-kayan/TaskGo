@@ -10,16 +10,36 @@ import (
 )
 
 // GetBooks godoc
-// @Summary      Retrieve all books
-// @Description  Get a list of all books from the database
+// @Summary      Retrieve all books (with optional filters)
+// @Description  Returns books, optionally filtered by title, author, year, or type
 // @Tags         books
 // @Produce      json
-// @Success      200  {array}  models.Book
+// @Param        title   query     string false "Filter by title (substring)"
+// @Param        author  query     string false "Filter by author (substring)"
+// @Param        year    query     int    false "Filter by publication year"
+// @Param        type    query     string false "Filter by genre/type"
+// @Success      200     {array}   models.Book
 // @Router       /books [get]
 func GetBooks(c *gin.Context) {
 	var books []models.Book
-	database.DB.Find(&books)
-	c.JSON(http.StatusOK, books)
+	db := database.DB
+
+	// Build dynamic query based on provided parameters
+	if title := c.Query("title"); title != "" {
+		db = db.Where("title ILIKE ?", "%"+title+"%")
+	}
+	if author := c.Query("author"); author != "" {
+		db = db.Where("author ILIKE ?", "%"+author+"%")
+	}
+	if year := c.Query("year"); year != "" {
+		db = db.Where("year = ?", year)
+	}
+	if bookType := c.Query("type"); bookType != "" {
+		db = db.Where("type = ?", bookType)
+	}
+
+	db.Find(&books)
+	utils.JSONSuccess(c, http.StatusOK, books)
 }
 
 // GetBook godoc
