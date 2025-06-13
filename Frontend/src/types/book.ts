@@ -1,14 +1,16 @@
 export interface Book {
-  id: string;
+  id: string;                 // UUID
   title: string;
   author: string;
   year: number;
   isbn?: string;
   description?: string;
-  genre?: string;
-  pages?: number;
+  type?: string;              // backend uses "type" instead of "genre"
   publisher?: string;
-  coverUrl?: string;
+  coverImageURL?: string;     // backend uses "cover_image_url"
+  created_at?: string;        // ISO timestamp
+  updated_at?: string;
+  deleted_at?: string | null;
 }
 
 export interface BookFormData {
@@ -17,13 +19,13 @@ export interface BookFormData {
   year: number | '';
   isbn?: string;
   description?: string;
-  genre?: string;
-  pages?: number | '';
+  type?: string;
   publisher?: string;
-  coverUrl?: string;
+  coverImageURL?: string;
 }
 
 export interface ApiError {
-  message: string;
+  error: string;             // matches { "error": "...message..." }
+  success?: false;           // optional flag
   status?: number;
 }

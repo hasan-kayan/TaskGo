@@ -50,6 +50,12 @@ export const validateBook = (data: BookFormData): ValidationErrors => {
     }
   }
 
+  // Type (validation)
+  if (!data.type || data.type.trim() === '') {
+    errors.type = 'Type is required';
+  } else if (data.type.trim().length < 2) {
+    errors.type = 'Type must be at least 2 characters long';
+  }
   return errors;
 };
 
