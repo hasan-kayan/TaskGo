@@ -2,14 +2,24 @@ package models
 
 import (
 	"time"
+
+	"github.com/google/uuid"
+	"gorm.io/gorm"
 )
+
+func (b *Book) BeforeCreate(tx *gorm.DB) (err error) {
+	if b.ID == uuid.Nil {
+		b.ID = uuid.New()
+	}
+	return
+}
 
 // Book represents the structure for a book entity.
 // It includes metadata such as title, author, and publication year.
 //
 // swagger:model Book
 type Book struct {
-	ID        uint       `json:"id" gorm:"primaryKey"`
+	ID        uuid.UUID  `json:"id" gorm:"type:uuid;primaryKey"`
 	CreatedAt time.Time  `json:"created_at"`
 	UpdatedAt time.Time  `json:"updated_at"`
 	DeletedAt *time.Time `json:"deleted_at,omitempty" gorm:"index"`
