@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"testing"
 
 	"github.com/gin-gonic/gin"
@@ -18,8 +19,13 @@ var createdID uint
 
 func setupRouter() *gin.Engine {
 	gin.SetMode(gin.TestMode)
+	os.Setenv("DB_DSN", "test.db")
+
 	database.ConnectDB()
-	r := gin.Default()
+	database.DB.Exec("DROP TABLE IF EXISTS books")
+	database.DB.AutoMigrate(&models.Book{})
+
+	r := gin.New()
 	routes.SetupRoutes(r)
 	return r
 }
@@ -111,4 +117,8 @@ func TestDeleteBook(t *testing.T) {
 	if w.Code != http.StatusOK {
 		t.Fatalf("Expected status 200, got %d", w.Code)
 	}
+}
+
+func TestCleanup(t *testing.T) {
+	_ = os.Remove("test.db")
 }
