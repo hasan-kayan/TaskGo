@@ -6,6 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/hasan-kayan/TaskGo/database"
 	"github.com/hasan-kayan/TaskGo/models"
+	"github.com/hasan-kayan/TaskGo/utils"
 )
 
 // GetBooks godoc
@@ -52,11 +53,15 @@ func GetBook(c *gin.Context) {
 func CreateBook(c *gin.Context) {
 	var input models.Book
 	if err := c.ShouldBindJSON(&input); err != nil {
-		c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: err.Error()})
+		utils.JSONError(c, http.StatusBadRequest, err.Error())
+		return
+	}
+	if err := utils.ValidateBook(&input); err != nil {
+		utils.JSONError(c, http.StatusUnprocessableEntity, err.Error())
 		return
 	}
 	database.DB.Create(&input)
-	c.JSON(http.StatusCreated, input)
+	utils.JSONSuccess(c, http.StatusCreated, input)
 }
 
 // UpdateBook godoc
@@ -74,16 +79,22 @@ func CreateBook(c *gin.Context) {
 func UpdateBook(c *gin.Context) {
 	var book models.Book
 	if err := database.DB.First(&book, c.Param("id")).Error; err != nil {
-		c.JSON(http.StatusNotFound, models.ErrorResponse{Error: "Book not found"})
+		utils.JSONError(c, http.StatusNotFound, "Book not found")
 		return
 	}
+
 	var input models.Book
 	if err := c.ShouldBindJSON(&input); err != nil {
-		c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: err.Error()})
+		utils.JSONError(c, http.StatusBadRequest, err.Error())
 		return
 	}
+	if err := utils.ValidateBook(&input); err != nil {
+		utils.JSONError(c, http.StatusUnprocessableEntity, err.Error())
+		return
+	}
+
 	database.DB.Model(&book).Updates(input)
-	c.JSON(http.StatusOK, book)
+	utils.JSONSuccess(c, http.StatusOK, book)
 }
 
 // DeleteBook godoc
