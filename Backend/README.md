@@ -41,38 +41,38 @@ TaskGo is a robust and extensible backend API built in **Go**, designed to manag
 
 ## 📁 Project Structure
 
-.
-├── books.db
-├── database
-│   └── db.go
-├── Dockerfile
-├── docs
-│   ├── docs.go
-│   ├── swagger.json
-│   └── swagger.yaml
-├── go.mod
-├── go.sum
-├── handlers
-│   ├── book_handler.go
-│   ├── health_handler.go
-│   └── url_handler.go
-├── main.go
-├── middleware
-│   ├── logger.go
-│   └── rate_limiter.go
-├── models
-│   └── book.go
-├── README.md
-├── routes
-│   └── routes.go
-├── swagger.json
-├── tests
-│   ├── books.db
-│   ├── book_test.go
-│   └── url_test.go
-└── utils
-    ├── response.go
-    └── validation.go
+Backend/
+├── books.db # SQLite database file
+├── main.go # App entry point
+├── go.mod / go.sum # Dependencies
+├── Dockerfile # Docker container config
+├── database/ # DB initialization
+│ └── db.go
+├── handlers/ # Route handlers
+│ ├── book_handler.go
+│ ├── url_handler.go
+│ └── health_handler.go
+├── middleware/ # Custom middlewares
+│ ├── logger.go
+│ └── rate_limiter.go
+├── models/ # GORM models
+│ └── book.go
+├── routes/ # Route definitions
+│ └── routes.go
+├── utils/ # Reusable helper logic
+│ ├── response.go
+│ └── validation.go
+├── docs/ # Swagger documentation
+│ ├── docs.go
+│ ├── swagger.yaml
+│ └── swagger.json
+├── tests/ # Unit tests
+│ ├── book_test.go
+│ ├── url_test.go
+│ └── books.db
+└── README.md
+
+
 
 ---
 
