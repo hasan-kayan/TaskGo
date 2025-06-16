@@ -111,8 +111,10 @@ go install github.com/swaggo/swag/cmd/swag@latest
 
 ### 🧪 Run Tests
 
+For tests and some other subprocesses I have created a general purpose Makefile.
+
 ```bash
-go test ./... -cover
+make test
 ```
 
 

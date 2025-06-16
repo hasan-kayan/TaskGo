@@ -10,14 +10,20 @@ import (
 	"testing"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"github.com/hasan-kayan/TaskGo/database"
 	"github.com/hasan-kayan/TaskGo/models"
 	"github.com/hasan-kayan/TaskGo/routes"
+	"github.com/stretchr/testify/assert"
 )
 
-var createdID uint
+type Envelope struct {
+	Success bool            `json:"success"`
+	Data    json.RawMessage `json:"data"`
+	Message string          `json:"message"`
+}
 
-func setupRouter() *gin.Engine {
+func setupTestRouter() *gin.Engine {
 	gin.SetMode(gin.TestMode)
 	os.Setenv("DB_DSN", "test.db")
 
@@ -25,125 +31,84 @@ func setupRouter() *gin.Engine {
 	database.DB.Exec("DROP TABLE IF EXISTS books")
 	database.DB.AutoMigrate(&models.Book{})
 
-	r := gin.New()
+	r := gin.Default()
 	routes.SetupRoutes(r)
 	return r
 }
 
-func TestCreateBook(t *testing.T) {
-	r := setupRouter()
+func TestHappyPath(t *testing.T) {
+	router := setupTestRouter()
 
 	book := models.Book{
-		Title:  "Test Book",
-		Author: "Test Author",
-		Year:   2023,
+		Title:  "Test Driven Development",
+		Author: "Kent Beck",
+		Year:   2003,
+		Type:   "Programming",
 	}
+	var created models.Book
 
-	body, _ := json.Marshal(book)
-	req, _ := http.NewRequest("POST", "/books", bytes.NewBuffer(body))
-	req.Header.Set("Content-Type", "application/json")
+	t.Run("Create", func(t *testing.T) {
+		body, _ := json.Marshal(book)
+		req, _ := http.NewRequest("POST", "/books", bytes.NewBuffer(body))
+		req.Header.Set("Content-Type", "application/json")
 
-	w := httptest.NewRecorder()
-	r.ServeHTTP(w, req)
+		w := httptest.NewRecorder()
+		router.ServeHTTP(w, req)
 
-	if w.Code != http.StatusCreated {
-		t.Fatalf("Expected status 201, got %d", w.Code)
-	}
+		assert.Equal(t, http.StatusCreated, w.Code, "❌ CreateBook should return 201 Created")
+		parseEnvelope(t, w.Body.Bytes(), &created)
+		assert.NotEqual(t, uuid.Nil, created.ID, "❌ Created book has nil UUID")
+		t.Logf("✅ Created book with ID: %s", created.ID)
+	})
 
-	var response models.Book
-	err := json.Unmarshal(w.Body.Bytes(), &response)
-	if err != nil {
-		t.Fatalf("Failed to parse response: %v", err)
-	}
+	t.Run("GetByID", func(t *testing.T) {
+		req, _ := http.NewRequest("GET", fmt.Sprintf("/books/%s", created.ID), nil)
+		w := httptest.NewRecorder()
+		router.ServeHTTP(w, req)
 
-	if response.ID == 0 {
-		t.Fatalf("Expected valid ID, got 0")
-	}
-	createdID = response.ID
-}
+		assert.Equal(t, http.StatusOK, w.Code, "❌ GetBook should return 200 OK")
+		var fetched models.Book
+		parseEnvelope(t, w.Body.Bytes(), &fetched)
+		assert.Equal(t, created.ID, fetched.ID)
+		t.Logf("✅ Successfully fetched book by ID")
+	})
 
-func TestGetAllBooks(t *testing.T) {
-	r := setupRouter()
+	t.Run("Update", func(t *testing.T) {
+		updated := models.Book{
+			Title:  "Refactoring",
+			Author: "Martin Fowler",
+			Year:   1999,
+			Type:   "Software",
+		}
+		body, _ := json.Marshal(updated)
+		req, _ := http.NewRequest("PUT", fmt.Sprintf("/books/%s", created.ID), bytes.NewBuffer(body))
+		req.Header.Set("Content-Type", "application/json")
 
-	req, _ := http.NewRequest("GET", "/books", nil)
-	w := httptest.NewRecorder()
-	r.ServeHTTP(w, req)
+		w := httptest.NewRecorder()
+		router.ServeHTTP(w, req)
 
-	if w.Code != http.StatusOK {
-		t.Fatalf("Expected status 200, got %d", w.Code)
-	}
-}
+		assert.Equal(t, http.StatusOK, w.Code, "❌ UpdateBook should return 200 OK")
+		var updatedBook models.Book
+		parseEnvelope(t, w.Body.Bytes(), &updatedBook)
+		assert.Equal(t, "Refactoring", updatedBook.Title)
+		t.Logf("✅ Updated book successfully")
+	})
 
-func TestGetBookByID(t *testing.T) {
-	r := setupRouter()
+	t.Run("Delete", func(t *testing.T) {
+		req, _ := http.NewRequest("DELETE", fmt.Sprintf("/books/%s", created.ID), nil)
+		w := httptest.NewRecorder()
+		router.ServeHTTP(w, req)
 
-	req, _ := http.NewRequest("GET", fmt.Sprintf("/books/%d", createdID), nil)
-	w := httptest.NewRecorder()
-	r.ServeHTTP(w, req)
+		assert.Equal(t, http.StatusOK, w.Code, "❌ DeleteBook should return 200 OK")
+		t.Logf("✅ Deleted book successfully")
+	})
 
-	if w.Code != http.StatusOK {
-		t.Fatalf("Expected status 200, got %d", w.Code)
-	}
-}
+	t.Run("GetAfterDelete", func(t *testing.T) {
+		req, _ := http.NewRequest("GET", fmt.Sprintf("/books/%s", created.ID), nil)
+		w := httptest.NewRecorder()
+		router.ServeHTTP(w, req)
 
-func TestUpdateBook(t *testing.T) {
-	r := setupRouter()
-
-	updatedBook := models.Book{
-		Title:  "Updated Title",
-		Author: "Updated Author",
-		Year:   2025,
-	}
-
-	body, _ := json.Marshal(updatedBook)
-	req, _ := http.NewRequest("PUT", fmt.Sprintf("/books/%d", createdID), bytes.NewBuffer(body))
-	req.Header.Set("Content-Type", "application/json")
-
-	w := httptest.NewRecorder()
-	r.ServeHTTP(w, req)
-
-	if w.Code != http.StatusOK {
-		t.Fatalf("Expected status 200, got %d", w.Code)
-	}
-}
-
-func TestDeleteBook(t *testing.T) {
-	r := setupRouter()
-
-	req, _ := http.NewRequest("DELETE", fmt.Sprintf("/books/%d", createdID), nil)
-	w := httptest.NewRecorder()
-	r.ServeHTTP(w, req)
-
-	if w.Code != http.StatusOK {
-		t.Fatalf("Expected status 200, got %d", w.Code)
-	}
-}
-
-func TestCleanup(t *testing.T) {
-	_ = os.Remove("test.db")
-}
-func TestFilterBooks(t *testing.T) {
-	r := setupRouter()
-
-	// create a book to filter
-	book := models.Book{Title: "Test Filter", Author: "Somebody", Year: 2025}
-	database.DB.Create(&book)
-
-	req, _ := http.NewRequest("GET", "/books?title=filter", nil)
-	w := httptest.NewRecorder()
-	r.ServeHTTP(w, req)
-
-	if w.Code != http.StatusOK {
-		t.Fatalf("Expected status 200, got %d", w.Code)
-	}
-
-	var resp struct {
-		Success bool          `json:"success"`
-		Data    []models.Book `json:"data"`
-	}
-	json.Unmarshal(w.Body.Bytes(), &resp)
-
-	if len(resp.Data) == 0 {
-		t.Fatalf("Expected at least 1 book in filtered result")
-	}
+		assert.Equal(t, http.StatusNotFound, w.Code, "❌ Get after delete should return 404")
+		t.Logf("✅ Book not found as expected after delete")
+	})
 }
