@@ -3,49 +3,32 @@ definitions:
   models.Book:
     properties:
       author:
-        description: |-
-          Author of the book.
-
-          required: true
-          example: J.R.R. Tolkien
+        type: string
+      cover_image_url:
         type: string
       created_at:
-        description: |-
-          CreatedAt is the timestamp when the book was added.
-
-          example: 2025-06-12T10:30:00Z
         type: string
       deleted_at:
-        description: |-
-          DeletedAt is the timestamp when the book was deleted (if soft-deleted).
-
-          example: null
+        type: string
+      description:
         type: string
       id:
-        description: |-
-          ID is the unique identifier for the book.
-
-          required: true
-          example: 1
+        type: string
+      isbn:
+        type: string
+      pages:
+        minimum: 0
         type: integer
+      publisher:
+        type: string
       title:
-        description: |-
-          Title of the book.
-
-          required: true
-          example: The Hobbit
+        type: string
+      type:
         type: string
       updated_at:
-        description: |-
-          UpdatedAt is the timestamp when the book was last updated.
-
-          example: 2025-06-12T10:30:00Z
         type: string
       year:
-        description: |-
-          Year of publication.
-
-          example: 1937
+        minimum: 0
         type: integer
     required:
     - author
@@ -69,31 +52,40 @@ definitions:
     type: object
 host: localhost:8080
 info:
-  contact:
-    email: support@example.com
-    name: API Support
-    url: http://example.com/support
-  description: This is the API for TaskGo, a task management application.
-  license:
-    name: MIT
-    url: https://opensource.org/licenses/MIT
-  termsOfService: http://example.com/terms/
+  contact: {}
+  description: API for managing books and processing URLs
   title: TaskGo API
   version: "1.0"
 paths:
   /books:
     get:
-      description: Get a list of all books from the database
+      description: Returns books, optionally filtered by title, author, year, or type
+      parameters:
+      - description: Filter by title (substring)
+        in: query
+        name: title
+        type: string
+      - description: Filter by author (substring)
+        in: query
+        name: author
+        type: string
+      - description: Filter by publication year
+        in: query
+        name: year
+        type: integer
+      - description: Filter by genre/type
+        in: query
+        name: type
+        type: string
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            items:
-              $ref: '#/definitions/models.Book'
-            type: array
-      summary: Retrieve all books
+            additionalProperties: true
+            type: object
+      summary: Retrieve all books (with optional filters)
       tags:
       - books
     post:
@@ -115,7 +107,11 @@ paths:
           schema:
             $ref: '#/definitions/models.Book'
         "400":
-          description: Bad Request
+          description: Bind error
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "422":
+          description: Validation error
           schema:
             $ref: '#/definitions/models.ErrorResponse'
       summary: Create a new book
@@ -123,13 +119,13 @@ paths:
       - books
   /books/{id}:
     delete:
-      description: Remove a book by ID
+      description: Remove a book by UUID
       parameters:
-      - description: Book ID
+      - description: Book UUID
         in: path
         name: id
         required: true
-        type: integer
+        type: string
       produces:
       - application/json
       responses:
@@ -137,21 +133,25 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/models.MessageResponse'
+        "400":
+          description: Invalid UUID
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
         "404":
-          description: Not Found
+          description: Book not found
           schema:
             $ref: '#/definitions/models.ErrorResponse'
       summary: Delete a book
       tags:
       - books
     get:
-      description: Retrieves a book from the database using its ID
+      description: Retrieves a book using its UUID
       parameters:
-      - description: Book ID
+      - description: Book UUID
         in: path
         name: id
         required: true
-        type: integer
+        type: string
       produces:
       - application/json
       responses:
@@ -159,8 +159,12 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/models.Book'
+        "400":
+          description: Invalid UUID
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
         "404":
-          description: Not Found
+          description: Book not found
           schema:
             $ref: '#/definitions/models.ErrorResponse'
       summary: Get a book by ID
@@ -169,13 +173,13 @@ paths:
     put:
       consumes:
       - application/json
-      description: Update a book by ID
+      description: Update a book by UUID
       parameters:
-      - description: Book ID
+      - description: Book UUID
         in: path
         name: id
         required: true
-        type: integer
+        type: string
       - description: Updated book data
         in: body
         name: book
@@ -197,7 +201,26 @@ paths:
           description: Not Found
           schema:
             $ref: '#/definitions/models.ErrorResponse'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
       summary: Update an existing book
       tags:
       - books
+  /health:
+    get:
+      description: Returns 200 OK if the service is up
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Health Check
+      tags:
+      - Health
 swagger: "2.0"

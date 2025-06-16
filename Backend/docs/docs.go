@@ -9,16 +9,7 @@ const docTemplate = `{
     "info": {
         "description": "{{escape .Description}}",
         "title": "{{.Title}}",
-        "termsOfService": "http://example.com/terms/",
-        "contact": {
-            "name": "API Support",
-            "url": "http://example.com/support",
-            "email": "support@example.com"
-        },
-        "license": {
-            "name": "MIT",
-            "url": "https://opensource.org/licenses/MIT"
-        },
+        "contact": {},
         "version": "{{.Version}}"
     },
     "host": "{{.Host}}",
@@ -26,22 +17,46 @@ const docTemplate = `{
     "paths": {
         "/books": {
             "get": {
-                "description": "Get a list of all books from the database",
+                "description": "Returns books, optionally filtered by title, author, year, or type",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "books"
                 ],
-                "summary": "Retrieve all books",
+                "summary": "Retrieve all books (with optional filters)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Filter by title (substring)",
+                        "name": "title",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by author (substring)",
+                        "name": "author",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Filter by publication year",
+                        "name": "year",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by genre/type",
+                        "name": "type",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/models.Book"
-                            }
+                            "type": "object",
+                            "additionalProperties": true
                         }
                     }
                 }
@@ -77,7 +92,13 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Bind error",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorResponse"
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error",
                         "schema": {
                             "$ref": "#/definitions/models.ErrorResponse"
                         }
@@ -87,7 +108,7 @@ const docTemplate = `{
         },
         "/books/{id}": {
             "get": {
-                "description": "Retrieves a book from the database using its ID",
+                "description": "Retrieves a book using its UUID",
                 "produces": [
                     "application/json"
                 ],
@@ -97,8 +118,8 @@ const docTemplate = `{
                 "summary": "Get a book by ID",
                 "parameters": [
                     {
-                        "type": "integer",
-                        "description": "Book ID",
+                        "type": "string",
+                        "description": "Book UUID",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -111,8 +132,14 @@ const docTemplate = `{
                             "$ref": "#/definitions/models.Book"
                         }
                     },
+                    "400": {
+                        "description": "Invalid UUID",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorResponse"
+                        }
+                    },
                     "404": {
-                        "description": "Not Found",
+                        "description": "Book not found",
                         "schema": {
                             "$ref": "#/definitions/models.ErrorResponse"
                         }
@@ -120,7 +147,7 @@ const docTemplate = `{
                 }
             },
             "put": {
-                "description": "Update a book by ID",
+                "description": "Update a book by UUID",
                 "consumes": [
                     "application/json"
                 ],
@@ -133,8 +160,8 @@ const docTemplate = `{
                 "summary": "Update an existing book",
                 "parameters": [
                     {
-                        "type": "integer",
-                        "description": "Book ID",
+                        "type": "string",
+                        "description": "Book UUID",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -167,11 +194,17 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/models.ErrorResponse"
                         }
+                    },
+                    "422": {
+                        "description": "Unprocessable Entity",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorResponse"
+                        }
                     }
                 }
             },
             "delete": {
-                "description": "Remove a book by ID",
+                "description": "Remove a book by UUID",
                 "produces": [
                     "application/json"
                 ],
@@ -181,8 +214,8 @@ const docTemplate = `{
                 "summary": "Delete a book",
                 "parameters": [
                     {
-                        "type": "integer",
-                        "description": "Book ID",
+                        "type": "string",
+                        "description": "Book UUID",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -195,10 +228,39 @@ const docTemplate = `{
                             "$ref": "#/definitions/models.MessageResponse"
                         }
                     },
-                    "404": {
-                        "description": "Not Found",
+                    "400": {
+                        "description": "Invalid UUID",
                         "schema": {
                             "$ref": "#/definitions/models.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Book not found",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/health": {
+            "get": {
+                "description": "Returns 200 OK if the service is up",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Health"
+                ],
+                "summary": "Health Check",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
                         }
                     }
                 }
@@ -214,32 +276,45 @@ const docTemplate = `{
             ],
             "properties": {
                 "author": {
-                    "description": "Author of the book.\n\nrequired: true\nexample: J.R.R. Tolkien",
+                    "type": "string"
+                },
+                "cover_image_url": {
                     "type": "string"
                 },
                 "created_at": {
-                    "description": "CreatedAt is the timestamp when the book was added.\n\nexample: 2025-06-12T10:30:00Z",
                     "type": "string"
                 },
                 "deleted_at": {
-                    "description": "DeletedAt is the timestamp when the book was deleted (if soft-deleted).\n\nexample: null",
+                    "type": "string"
+                },
+                "description": {
                     "type": "string"
                 },
                 "id": {
-                    "description": "ID is the unique identifier for the book.\n\nrequired: true\nexample: 1",
-                    "type": "integer"
+                    "type": "string"
+                },
+                "isbn": {
+                    "type": "string"
+                },
+                "pages": {
+                    "type": "integer",
+                    "minimum": 0
+                },
+                "publisher": {
+                    "type": "string"
                 },
                 "title": {
-                    "description": "Title of the book.\n\nrequired: true\nexample: The Hobbit",
+                    "type": "string"
+                },
+                "type": {
                     "type": "string"
                 },
                 "updated_at": {
-                    "description": "UpdatedAt is the timestamp when the book was last updated.\n\nexample: 2025-06-12T10:30:00Z",
                     "type": "string"
                 },
                 "year": {
-                    "description": "Year of publication.\n\nexample: 1937",
-                    "type": "integer"
+                    "type": "integer",
+                    "minimum": 0
                 }
             }
         },
@@ -271,7 +346,7 @@ var SwaggerInfo = &swag.Spec{
 	BasePath:         "/",
 	Schemes:          []string{},
 	Title:            "TaskGo API",
-	Description:      "This is the API for TaskGo, a task management application.",
+	Description:      "API for managing books and processing URLs",
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,
 	LeftDelim:        "{{",

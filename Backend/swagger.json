@@ -1,9 +1,19 @@
 {
+    "schemes": [],
     "swagger": "2.0",
     "info": {
-        "description": "API for managing books and processing URLs",
+        "description": "This is the API for TaskGo, a task management application.",
         "title": "TaskGo API",
-        "contact": {},
+        "termsOfService": "http://example.com/terms/",
+        "contact": {
+            "name": "API Support",
+            "url": "http://example.com/support",
+            "email": "support@example.com"
+        },
+        "license": {
+            "name": "MIT",
+            "url": "https://opensource.org/licenses/MIT"
+        },
         "version": "1.0"
     },
     "host": "localhost:8080",
@@ -11,46 +21,22 @@
     "paths": {
         "/books": {
             "get": {
-                "description": "Returns books, optionally filtered by title, author, year, or type",
+                "description": "Get a list of all books from the database",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "books"
                 ],
-                "summary": "Retrieve all books (with optional filters)",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Filter by title (substring)",
-                        "name": "title",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Filter by author (substring)",
-                        "name": "author",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "description": "Filter by publication year",
-                        "name": "year",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Filter by genre/type",
-                        "name": "type",
-                        "in": "query"
-                    }
-                ],
+                "summary": "Retrieve all books",
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.Book"
+                            }
                         }
                     }
                 }
@@ -86,13 +72,7 @@
                         }
                     },
                     "400": {
-                        "description": "Bind error",
-                        "schema": {
-                            "$ref": "#/definitions/models.ErrorResponse"
-                        }
-                    },
-                    "422": {
-                        "description": "Validation error",
+                        "description": "Bad Request",
                         "schema": {
                             "$ref": "#/definitions/models.ErrorResponse"
                         }
@@ -102,7 +82,7 @@
         },
         "/books/{id}": {
             "get": {
-                "description": "Retrieves a book using its UUID",
+                "description": "Retrieves a book from the database using its ID",
                 "produces": [
                     "application/json"
                 ],
@@ -112,8 +92,8 @@
                 "summary": "Get a book by ID",
                 "parameters": [
                     {
-                        "type": "string",
-                        "description": "Book UUID",
+                        "type": "integer",
+                        "description": "Book ID",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -126,14 +106,8 @@
                             "$ref": "#/definitions/models.Book"
                         }
                     },
-                    "400": {
-                        "description": "Invalid UUID",
-                        "schema": {
-                            "$ref": "#/definitions/models.ErrorResponse"
-                        }
-                    },
                     "404": {
-                        "description": "Book not found",
+                        "description": "Not Found",
                         "schema": {
                             "$ref": "#/definitions/models.ErrorResponse"
                         }
@@ -141,7 +115,7 @@
                 }
             },
             "put": {
-                "description": "Update a book by UUID",
+                "description": "Update a book by ID",
                 "consumes": [
                     "application/json"
                 ],
@@ -154,8 +128,8 @@
                 "summary": "Update an existing book",
                 "parameters": [
                     {
-                        "type": "string",
-                        "description": "Book UUID",
+                        "type": "integer",
+                        "description": "Book ID",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -188,17 +162,11 @@
                         "schema": {
                             "$ref": "#/definitions/models.ErrorResponse"
                         }
-                    },
-                    "422": {
-                        "description": "Unprocessable Entity",
-                        "schema": {
-                            "$ref": "#/definitions/models.ErrorResponse"
-                        }
                     }
                 }
             },
             "delete": {
-                "description": "Remove a book by UUID",
+                "description": "Remove a book by ID",
                 "produces": [
                     "application/json"
                 ],
@@ -208,8 +176,8 @@
                 "summary": "Delete a book",
                 "parameters": [
                     {
-                        "type": "string",
-                        "description": "Book UUID",
+                        "type": "integer",
+                        "description": "Book ID",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -222,39 +190,10 @@
                             "$ref": "#/definitions/models.MessageResponse"
                         }
                     },
-                    "400": {
-                        "description": "Invalid UUID",
-                        "schema": {
-                            "$ref": "#/definitions/models.ErrorResponse"
-                        }
-                    },
                     "404": {
-                        "description": "Book not found",
+                        "description": "Not Found",
                         "schema": {
                             "$ref": "#/definitions/models.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/health": {
-            "get": {
-                "description": "Returns 200 OK if the service is up",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Health"
-                ],
-                "summary": "Health Check",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
                         }
                     }
                 }
@@ -270,45 +209,32 @@
             ],
             "properties": {
                 "author": {
-                    "type": "string"
-                },
-                "cover_image_url": {
+                    "description": "Author of the book.\n\nrequired: true\nexample: J.R.R. Tolkien",
                     "type": "string"
                 },
                 "created_at": {
+                    "description": "CreatedAt is the timestamp when the book was added.\n\nexample: 2025-06-12T10:30:00Z",
                     "type": "string"
                 },
                 "deleted_at": {
-                    "type": "string"
-                },
-                "description": {
+                    "description": "DeletedAt is the timestamp when the book was deleted (if soft-deleted).\n\nexample: null",
                     "type": "string"
                 },
                 "id": {
-                    "type": "string"
-                },
-                "isbn": {
-                    "type": "string"
-                },
-                "pages": {
-                    "type": "integer",
-                    "minimum": 0
-                },
-                "publisher": {
-                    "type": "string"
+                    "description": "ID is the unique identifier for the book.\n\nrequired: true\nexample: 1",
+                    "type": "integer"
                 },
                 "title": {
-                    "type": "string"
-                },
-                "type": {
+                    "description": "Title of the book.\n\nrequired: true\nexample: The Hobbit",
                     "type": "string"
                 },
                 "updated_at": {
+                    "description": "UpdatedAt is the timestamp when the book was last updated.\n\nexample: 2025-06-12T10:30:00Z",
                     "type": "string"
                 },
                 "year": {
-                    "type": "integer",
-                    "minimum": 0
+                    "description": "Year of publication.\n\nexample: 1937",
+                    "type": "integer"
                 }
             }
         },
