@@ -32,6 +32,7 @@ type Book struct {
 	CoverImageURL string `json:"cover_image_url,omitempty" validate:"omitempty,url"`
 	Publisher     string `json:"publisher,omitempty"`
 	Type          string `json:"type,omitempty"`
+	Pages         int    `json:"pages,omitempty" validate:"gte=0"`
 }
 
 // ErrorResponse is used for API error responses.

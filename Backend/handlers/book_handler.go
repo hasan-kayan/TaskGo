@@ -121,9 +121,9 @@ func CreateBook(c *gin.Context) {
 // @Param        id    path      string      true  "Book UUID"
 // @Param        book  body      models.Book true  "Updated book data"
 // @Success      200   {object}  models.Book
-// @Failure      400   {object}  models.ErrorResponse "Invalid UUID / bind error"
-// @Failure      404   {object}  models.ErrorResponse "Book not found"
-// @Failure      422   {object}  models.ErrorResponse "Validation error"
+// @Failure      400   {object}  models.ErrorResponse
+// @Failure      404   {object}  models.ErrorResponse
+// @Failure      422   {object}  models.ErrorResponse
 // @Router       /books/{id} [put]
 func UpdateBook(c *gin.Context) {
 	id, err := uuid.Parse(c.Param("id"))
@@ -148,7 +148,12 @@ func UpdateBook(c *gin.Context) {
 		return
 	}
 
+	// Apply updates
 	database.DB.Model(&book).Updates(input)
+
+	// Reload to ensure we send the fresh values
+	database.DB.First(&book, "id = ?", id)
+
 	utils.JSONSuccess(c, http.StatusOK, book)
 }
 
