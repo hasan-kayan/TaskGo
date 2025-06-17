@@ -12,26 +12,15 @@ import (
 	"github.com/hasan-kayan/TaskGo/utils"
 )
 
-/* -------------------------------------------------------------------------
-   GET /books   (with optional query filters)
----------------------------------------------------------------------------*/
+/* ────────────────────────────────────────────────────────── *
+   GET /books  ─ list with optional filters
+ * ────────────────────────────────────────────────────────── */
 
-// GetBooks godoc
-// @Summary      Retrieve all books (optional filters)
-// @Description  Filter by title, author, year, or type (genre)
-// @Tags         books
-// @Produce      json
-// @Param        title   query  string false  "Filter by title substring"
-// @Param        author  query  string false  "Filter by author substring"
-// @Param        year    query  int    false  "Filter by publication year"
-// @Param        type    query  string false  "Filter by genre"
-// @Success      200 {array} models.Book
-// @Router       /books [get]
 func GetBooks(c *gin.Context) {
 	var books []models.Book
 	db := database.DB
 
-	// Build WHERE clauses dynamically
+	// optional query filters
 	if q := c.Query("title"); q != "" {
 		db = db.Where("LOWER(title) LIKE ?", "%"+strings.ToLower(q)+"%")
 	}
@@ -49,144 +38,104 @@ func GetBooks(c *gin.Context) {
 	utils.JSONSuccess(c, http.StatusOK, books)
 }
 
-/* -------------------------------------------------------------------------
-   GET /books/{id}
----------------------------------------------------------------------------*/
+/* ────────────────────────────────────────────────────────── *
+   GET /books/:id  ─ fetch by UUID
+ * ────────────────────────────────────────────────────────── */
 
-// GetBook godoc
-// @Summary      Get book by UUID
-// @Tags         books
-// @Produce      json
-// @Param        id path string true "Book UUID"
-// @Success      200 {object} models.Book
-// @Failure      400 {object} models.ErrorResponse
-// @Failure      404 {object} models.ErrorResponse
-// @Router       /books/{id} [get]
 func GetBook(c *gin.Context) {
 	id, err := uuid.Parse(c.Param("id"))
 	if err != nil {
-		utils.JSONError(c, http.StatusBadRequest, "Invalid UUID format")
+		utils.JSONError(c, http.StatusBadRequest, "invalid UUID")
 		return
 	}
 
-	var result models.Book
-	if err := database.DB.First(&result, "id = ?", id).Error; err != nil {
-		utils.JSONError(c, http.StatusNotFound, "Book not found")
+	var book models.Book
+	if err := database.DB.First(&book, "id = ?", id).Error; err != nil {
+		utils.JSONError(c, http.StatusNotFound, "book not found")
 		return
 	}
-	utils.JSONSuccess(c, http.StatusOK, result)
+
+	utils.JSONSuccess(c, http.StatusOK, book)
 }
 
-/* -------------------------------------------------------------------------
-   POST /books
----------------------------------------------------------------------------*/
+/* ────────────────────────────────────────────────────────── *
+   POST /books  ─ create
+ * ────────────────────────────────────────────────────────── */
 
-// CreateBook godoc
-// @Summary      Create new book
-// @Tags         books
-// @Accept       json
-// @Produce      json
-// @Param        book body models.Book true "Book payload"
-// @Success      201 {object} models.Book
-// @Failure      400 {object} models.ErrorResponse
-// @Failure      422 {object} models.ErrorResponse
-// @Router       /books [post]
 func CreateBook(c *gin.Context) {
-	var input models.Book
-
-	if err := c.ShouldBindJSON(&input); err != nil {
+	var payload models.Book
+	if err := c.ShouldBindJSON(&payload); err != nil {
 		utils.JSONError(c, http.StatusBadRequest, err.Error())
 		return
 	}
 
-	// 🔑 Generate UUID if empty
-	if input.ID == uuid.Nil {
-		input.ID = uuid.New()
+	if payload.ID == uuid.Nil {
+		payload.ID = uuid.New()
 	}
 
-	if err := utils.ValidateBook(&input); err != nil {
+	if err := utils.ValidateBook(&payload); err != nil {
 		utils.JSONError(c, http.StatusUnprocessableEntity, err.Error())
 		return
 	}
 
-	database.DB.Create(&input)
-	utils.JSONSuccess(c, http.StatusCreated, input)
+	database.DB.Create(&payload)
+	utils.JSONSuccess(c, http.StatusCreated, payload)
 }
 
-/* -------------------------------------------------------------------------
-   PUT /books/{id}
----------------------------------------------------------------------------*/
+/* ────────────────────────────────────────────────────────── *
+   PUT /books/:id  ─ partial update
+ * ────────────────────────────────────────────────────────── */
 
-// UpdateBook godoc
-// @Summary      Update book by UUID
-// @Tags         books
-// @Accept       json
-// @Produce      json
-// @Param        id   path string      true "Book UUID"
-// @Param        book body models.Book true "Updated payload"
-// @Success      200 {object} models.Book
-// @Failure      400 {object} models.ErrorResponse
-// @Failure      404 {object} models.ErrorResponse
-// @Failure      422 {object} models.ErrorResponse
-// @Router       /books/{id} [put]
 func UpdateBook(c *gin.Context) {
-	uid, err := uuid.Parse(c.Param("id"))
+	bookID, err := uuid.Parse(c.Param("id"))
 	if err != nil {
-		utils.JSONError(c, http.StatusBadRequest, "Invalid UUID format")
+		utils.JSONError(c, http.StatusBadRequest, "invalid UUID")
 		return
 	}
 
-	// current DB record
+	// load current record
 	var current models.Book
-	if err := database.DB.First(&current, "id = ?", uid).Error; err != nil {
-		utils.JSONError(c, http.StatusNotFound, "Book not found")
+	if err := database.DB.First(&current, "id = ?", bookID).Error; err != nil {
+		utils.JSONError(c, http.StatusNotFound, "book not found")
 		return
 	}
 
-	// incoming JSON
-	var in models.Book
-	if err := c.ShouldBindJSON(&in); err != nil {
+	// decode patch payload (all fields optional)
+	var patch models.Book
+	if err := c.ShouldBindJSON(&patch); err != nil {
 		utils.JSONError(c, http.StatusBadRequest, err.Error())
 		return
 	}
-	if err := utils.ValidateBook(&in); err != nil {
+
+	// apply non-zero fields to the current struct
+	database.DB.Model(&current).Updates(patch)
+
+	// validation after merge – required fields must still be set
+	if err := utils.ValidateBook(&current); err != nil {
 		utils.JSONError(c, http.StatusUnprocessableEntity, err.Error())
 		return
 	}
-
-	// Only non-zero fields will overwrite
-	database.DB.Model(&current).Updates(in)
-	database.DB.First(&current, "id = ?", uid)
 
 	utils.JSONSuccess(c, http.StatusOK, current)
 }
 
-/* -------------------------------------------------------------------------
-   DELETE /books/{id}
----------------------------------------------------------------------------*/
+/* ────────────────────────────────────────────────────────── *
+   DELETE /books/:id
+ * ────────────────────────────────────────────────────────── */
 
-// DeleteBook godoc
-// @Summary      Delete book by UUID
-// @Tags         books
-// @Produce      json
-// @Param        id path string true "Book UUID"
-// @Success      200 {object} models.MessageResponse
-// @Failure      400 {object} models.ErrorResponse
-// @Failure      404 {object} models.ErrorResponse
-// @Router       /books/{id} [delete]
 func DeleteBook(c *gin.Context) {
-	uid, err := uuid.Parse(c.Param("id"))
+	bookID, err := uuid.Parse(c.Param("id"))
 	if err != nil {
-		utils.JSONError(c, http.StatusBadRequest, "Invalid UUID format")
+		utils.JSONError(c, http.StatusBadRequest, "invalid UUID")
 		return
 	}
 
-	var b models.Book
-	if err := database.DB.First(&b, "id = ?", uid).Error; err != nil {
-		utils.JSONError(c, http.StatusNotFound, "Book not found")
+	var book models.Book
+	if err := database.DB.First(&book, "id = ?", bookID).Error; err != nil {
+		utils.JSONError(c, http.StatusNotFound, "book not found")
 		return
 	}
 
-	database.DB.Delete(&b)
-	utils.JSONSuccess(c, http.StatusOK, models.MessageResponse{Message: "Book deleted"})
+	database.DB.Delete(&book)
+	utils.JSONSuccess(c, http.StatusOK, models.MessageResponse{Message: "book deleted"})
 }

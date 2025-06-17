@@ -5,14 +5,19 @@ import (
 	"github.com/hasan-kayan/TaskGo/handlers"
 )
 
+// SetupRoutes attaches all route groups to the main Gin engine.
 func SetupRoutes(r *gin.Engine) {
+	registerHealthRoutes(r)
 	registerBookRoutes(r)
 	registerUtilityRoutes(r)
-	registerHealthRoutes(r) // 👈 add this
 }
+
+// HealthCheck endpoint for readiness/liveness probes.
 func registerHealthRoutes(r *gin.Engine) {
 	r.GET("/health", handlers.HealthCheck)
 }
+
+// CRUD routes for Book resource.
 func registerBookRoutes(r *gin.Engine) {
 	books := r.Group("/books")
 	{
@@ -24,6 +29,7 @@ func registerBookRoutes(r *gin.Engine) {
 	}
 }
 
+// Utility routes (e.g., URL processing)
 func registerUtilityRoutes(r *gin.Engine) {
 	r.POST("/process-url", handlers.ProcessURL)
 }

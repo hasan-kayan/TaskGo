@@ -2,6 +2,8 @@ package middleware
 
 import (
 	"net"
+	"os"
+	"strconv"
 	"sync"
 	"time"
 
@@ -9,9 +11,28 @@ import (
 	"golang.org/x/time/rate"
 )
 
-// -----------------------------------------------------------------------------
-// Visitor bookkeeping
-// -----------------------------------------------------------------------------
+/*───────────────────────────────────────────────────────────────*
+|            Configuration ‒ read once at program start         |
+*───────────────────────────────────────────────────────────────*/
+
+var (
+	rlRPS    = getIntEnv("RATE_LIMIT_RPS", 60)   // requests per second
+	rlBurst  = getIntEnv("RATE_LIMIT_BURST", 30) // maximum burst size
+	cleanTTL = time.Minute * 5                   // keep idle visitor structs
+)
+
+func getIntEnv(key string, def int) int {
+	v, err := strconv.Atoi(os.Getenv(key))
+	if err != nil || v <= 0 {
+		return def
+	}
+	return v
+}
+
+/*───────────────────────────────────────────────────────────────*
+|                    Visitor bookkeeping                        |
+*───────────────────────────────────────────────────────────────*/
+
 type visitor struct {
 	limiter  *rate.Limiter
 	lastSeen time.Time
@@ -22,31 +43,31 @@ var (
 	visitors = make(map[string]*visitor)
 )
 
-// getVisitor returns the existing limiter for an IP or creates a new one.
 func getVisitor(ip string) *rate.Limiter {
 	mu.Lock()
 	defer mu.Unlock()
 
-	v, exists := visitors[ip]
-	if !exists {
-		// 60 req / minute, burst 30
-		lim := rate.NewLimiter(rate.Every(time.Minute/60), 30)
-		visitors[ip] = &visitor{limiter: lim, lastSeen: time.Now()}
-		return lim
+	if v, ok := visitors[ip]; ok {
+		v.lastSeen = time.Now()
+		return v.limiter
 	}
 
-	v.lastSeen = time.Now()
-	return v.limiter
+	lim := rate.NewLimiter(rate.Limit(rlRPS), rlBurst)
+	visitors[ip] = &visitor{limiter: lim, lastSeen: time.Now()}
+	return lim
 }
 
-// background cleanup to avoid memory leak
+/*───────────────────────────────────────────────────────────────*
+|                Background GC ‒ prevent leaks                  |
+*───────────────────────────────────────────────────────────────*/
+
 func init() {
 	go func() {
-		for {
-			time.Sleep(time.Minute)
+		ticker := time.NewTicker(time.Minute)
+		for range ticker.C {
 			mu.Lock()
 			for ip, v := range visitors {
-				if time.Since(v.lastSeen) > 5*time.Minute {
+				if time.Since(v.lastSeen) > cleanTTL {
 					delete(visitors, ip)
 				}
 			}
@@ -55,17 +76,22 @@ func init() {
 	}()
 }
 
-// RateLimiter is a Gin middleware that limits each IP.
+/*───────────────────────────────────────────────────────────────*
+|                   Gin middleware function                     |
+*───────────────────────────────────────────────────────────────*/
+
+// RateLimiter limits requests per IP based on env configuration.
+//
+// • `RATE_LIMIT_RPS`   – allowed requests **per second** (default 60)
+// • `RATE_LIMIT_BURST` – burst size before throttling   (default 30)
 func RateLimiter() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		// Best effort IP extraction
 		ip, _, err := net.SplitHostPort(c.Request.RemoteAddr)
 		if err != nil {
-			ip = c.ClientIP()
+			ip = c.ClientIP() // fallback (covers proxies / unit-tests)
 		}
 
-		limiter := getVisitor(ip)
-		if !limiter.Allow() {
+		if !getVisitor(ip).Allow() {
 			c.AbortWithStatusJSON(429, gin.H{
 				"success": false,
 				"error":   "Too Many Requests",
