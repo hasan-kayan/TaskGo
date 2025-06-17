@@ -1,152 +1,231 @@
-# 🚀 **TaskGo** – Full‑Stack Book Library & Smart URL Platform
+# 🚀 TaskGo – Full-Stack Library & Smart URL Platform
 
-A production‑ready **monorepo** that combines a React/Next.js frontend with a Go backend.  Spin it up locally in seconds (Docker Compose) or push to any cloud of your choice.  All services are fully containerised, covered by tests, linted & documented with Swagger / Storybook.
+A monorepo combining a React/Next.js frontend with a Go backend. Spin up locally in seconds with Docker Compose or deploy to any cloud. Fully containerized, tested, linted, and documented with Swagger & Storybook.
 
-> **Frontend directory →** `Frontend/`
-> **Backend  directory →** `Backend/`
-
----
-
-## ✨  Why TaskGo?
-
-* **Rich UI / UX** – Material‑tailwind dashboard, modal forms, instant feedback ✅
-* **Fast API** – Gin + GORM + SQLite (switchable) with rate‑limit & structured logs ⚡
-* **Clean Architecture** & **Type‑safety** throughout (TypeScript / Go 1.21).
-* **One‑command dev‑env** via Docker Compose & Makefiles.
+> 📁 Frontend: `Frontend/`
+> 🖥️ Backend: `Backend/`
 
 ---
 
-## 🗄️  Repository Layout
+## 🧭 Overview
+
+| App      | Stack                                 | Docs                 |
+| -------- | ------------------------------------- | -------------------- |
+| Backend  | Go · Gin · GORM · SQLite · Swagger    | `Backend/README.md`  |
+| Frontend | Next.js 14 · React 18 · Tailwind · TS | `Frontend/README.md` |
+
+---
+
+## 🗂️ Project Structure
 
 ```
 TaskGo/
-├── Backend/          # Go API (Gin, Swagger, tests, Dockerfile, Makefile)
-├── Frontend/         # Next.js 14 (App Router) + Tailwind + Vitest + Dockerfile
-├── docker-compose.yml# Zero‑config local stack (frontend ↔ backend)
-└── README.md         # ← this file
+├── Backend/          # Go REST API (handlers, middleware, Swagger)
+├── Frontend/         # Next.js 14 (App Router), Tailwind, Vitest
+├── assets/           # UI screenshots
+├── docker-compose.yml
+└── README.md
 ```
 
-### Backend tree (abridged)
+### 🔖 Backend Highlights
 
 ```
 Backend/
-├── handlers/      book_handler.go, url_handler.go, health_handler.go
-├── middleware/    logger.go, rate_limiter.go
-├── tests/         … (80 %+ coverage)
-├── docs/          swagger.yaml/json & generated code
-├── Dockerfile     multi‑stage (14 MB image)
-└── Makefile       developer shortcuts
+├── handlers/       # Book, URL, Health handlers
+├── middleware/     # Logger, Rate Limiter
+├── docs/           # Swagger UI & JSON
+├── tests/          # Unit/integration (80%+ coverage)
+├── Dockerfile      # Multi-stage (14MB output)
+└── Makefile        # Shortcuts (lint, test, dev…)
 ```
 
-### Frontend tree (abridged)
+### 🖼 Frontend Highlights
 
 ```
 Frontend/
-├── app/           # Next.js routes (App Router)
-├── components/    # Re‑usable UI (BookCard, BookForm …)
-├── context/       # BooksContext (React Context API)
-├── test/          # Vitest + Testing‑Library suites
-├── public/        # static assets / favicons
-├── Dockerfile     # node‑alpine build → nginx runtime
-└── Makefile       # yarn wrappers & lint/test
+├── app/            # App Router (Next.js 14)
+├── components/     # BookCard, BookForm, etc.
+├── context/        # Global Book state
+├── test/           # Vitest + Testing Library
+├── public/         # Icons & static assets
+├── Dockerfile      # Alpine Node → Nginx build
+└── Makefile        # Lint/test/dev helpers
 ```
 
 ---
 
-## ⚙️  Configuration (.env files)
+## 🔧 .env Files
 
-Both services read a local **`.env`** (loaded via `dotenv`).  *Copy the sample → edit as needed.*
+Each service uses a separate `.env`.
 
-### Backend  (`Backend/.env`)
+### 📡 Backend (.env)
 
-| Key              | Default    | Description                               |
-| ---------------- | ---------- | ----------------------------------------- |
-| `HTTP_PORT`      | `8080`     | API port                                  |
-| `APP_ENV`        | `dev`      | `dev` \| `prod` (controls Swagger & logs) |
-| `DB_DSN`         | `books.db` | SQLite DSN / replace with Postgres URI    |
-| `RATE_LIMIT_RPS` | `60`       | Requests per minute per IP                |
+```env
+HTTP_PORT=8080
+APP_ENV=dev
+DB_DSN=books.db
+RATE_LIMIT_RPS=60
+```
 
-### Frontend (`Frontend/.env`)
+### 🌐 Frontend (.env)
 
-| Key                    | Default                 | Description                     |
-| ---------------------- | ----------------------- | ------------------------------- |
-| `NEXT_PUBLIC_API_URL`  | `http://localhost:8080` | Back‑end base URL (books, URLs) |
-| `NEXT_PUBLIC_APP_PORT` | `3000`                  | Local dev port                  |
+```env
+NEXT_PUBLIC_API_URL=http://localhost:8080
+NEXT_PUBLIC_APP_PORT=3000
+```
 
-> **Tip** – change the ports in both `.env` files and docker‑compose will pick them up automatically.
+> 📝 Ports auto-applied by Docker Compose
 
 ---
 
-## 🧑‍💻  Local Development
+## 🧪 Local Development
 
-### Prerequisites
+### 🔨 Requirements
 
-* **Docker 24.x** & Compose v2
-* **Make** / GNU Make
+* Docker 24+
+* Docker Compose v2
+* GNU Make
 
-### 1. Clone & boot everything
+### 🚀 Quick Start
 
 ```bash
-$ git clone https://github.com/hasan-kayan/TaskGo.git && cd TaskGo
-$ make up           # shortcut → docker compose up --build -d
+git clone https://github.com/hasan-kayan/TaskGo.git
+cd TaskGo
+make up  # = docker compose up --build -d
 ```
 
-| Service  | URL                                                              |
+| App      | URL                                                              |
 | -------- | ---------------------------------------------------------------- |
 | Frontend | [http://localhost:3000](http://localhost:3000)                   |
 | Backend  | [http://localhost:8080](http://localhost:8080)                   |
 | Swagger  | [http://localhost:8080/swagger/](http://localhost:8080/swagger/) |
 
-*Shut down with `make down`.*
+> Stop stack: `make down`
 
-### 2. Hot‑reload (optional)
+### 🔄 Hot Reload (Optional)
 
 ```bash
-# Backend hot‑reload (Air)
-$ cd Backend && make dev
-
-# Frontend hot‑reload (Next.js dev server)
-$ cd Frontend && make dev
+cd Backend && make dev       # Air (Go)
+cd Frontend && make dev      # Next.js dev
 ```
 
 ---
 
-## 🛠  Useful Make targets (top‑level)
+## 📸 UI Preview
 
-| Target      | What it does                        |
-| ----------- | ----------------------------------- |
-| `make up`   | `docker compose up --build -d`      |
-| `make down` | Stop & purge containers/volumes     |
-| `make lint` | Run Go + TS/ES linters in both apps |
-| `make test` | Run Go + Vitest suites              |
-| `make e2e`  | Cypress end‑to‑end (headless)       |
+<table>
+<tr>
+<td><img src="assets/dashboard.png" width="250"/></td>
+<td><img src="assets/search.png" width="250"/></td>
+<td><img src="assets/filters.png" width="250"/></td>
+</tr>
+<tr>
+<td><img src="assets/add_book_modal.png" width="250"/></td>
+<td><img src="assets/view_book.png" width="250"/></td>
+<td><img src="assets/edit_book.png" width="250"/></td>
+</tr>
+<tr>
+<td><img src="assets/delete.png" width="250"/></td>
+<td><img src="assets/filter2.png" width="250"/></td>
+<td></td>
+</tr>
+</table>
 
 ---
 
-## 📦  Production Build
+## ⚙️ Make Commands (Root)
+
+| Command     | Action                                      |
+| ----------- | ------------------------------------------- |
+| `make up`   | `docker compose up --build -d`              |
+| `make down` | Stop and clean containers/volumes           |
+| `make lint` | Run backend (Go) + frontend (TS/ES) linters |
+| `make test` | Run backend + frontend test suites          |
+| `make e2e`  | Cypress UI end-to-end tests (headless)      |
+
+---
+
+## 🛠 Backend Makefile Cheatsheet
+
+The backend ships with a feature-rich **Makefile** (`Backend/Makefile`) that wraps common developer tasks behind short, colourful commands.
 
 ```bash
-# Build backend image
-$ cd Backend && make docker   # => taskgo-backend:latest
+# 1) Install/update tooling (swag, air, golangci-lint)
+cd Backend && make deps
 
-# Build frontend image
-$ cd ../Frontend && make docker # => taskgo-frontend:latest
+# 2) Launch API with hot-reload
+make dev
+
+# 3) Lint & test
+make lint
+make test   # includes race-detector & coverage
+
+# 4) Container image
+make docker   # → taskgo-backend:latest
+make run      # run image on $PORT (default 8080)
+```
+
+| Target     | Description                                                               |
+| ---------- | ------------------------------------------------------------------------- |
+| `deps`     | `go mod tidy` **+** fetch **swag**, **air**, **golangci-lint** if missing |
+| `docs`     | Regenerate Swagger docs into `Backend/docs/`                              |
+| `dev`      | Start the API with live-reload (Air) – falls back to `go run .`           |
+| `lint`     | Static checks: `go vet` + `golangci-lint run`                             |
+| `test`     | `go test -v -race -cover` across *all* packages                           |
+| `coverage` | Show text summary & hint to open HTML report                              |
+| `docker`   | Multi-stage build → **taskgo-backend\:latest** (≈14 MB)                   |
+| `run`      | Run container mapping `${PORT}`→8080                                      |
+| `clean`    | Delete `coverage.out` & generated Swagger artefacts                       |
+
+All targets log with emoji & ANSI colours so you can *see* progress at a glance 🎉
+
+---
+
+## 📦 Producti
+
+```bash
+# Backend
+cd Backend && make docker
+
+# Frontend
+cd Frontend && make docker
 ```
 
 Or deploy together:
 
 ```bash
-$ docker compose -f docker-compose.prod.yml up -d   # nginx + backend
+docker compose -f docker-compose.prod.yml up -d
 ```
 
-Kubernetes chart, Helm values & GH Actions workflow examples live in `/deploy/`.
+CI/CD, Helm, and Kubernetes manifests are available under `/deploy/`.
 
 ---
 
-## 🧪  Testing
+## 🧪 Testing
 
-* **Backend** – `cd Backend && make test` → `go test -race -cover`
-* **Frontend** – `cd Frontend && make test` → `vitest run`
-* **API contract** – Postman collection under `/docs/postman/`.
+```bash
+# Backend test & coverage
+cd Backend && make test
 
-Continuous Integration executes all of the above on every PR.
+# Frontend unit tests
+cd Frontend && make test
+```
+
+Contract tests live in `/docs/postman/` (collection).
+
+---
+
+## 📚 Full Docs
+
+* 🧠 Backend API: [Backend/README.md](Backend/README.md)
+* 🎨 Frontend UI: [Frontend/README.md](Frontend/README.md)
+
+Includes usage details, env switching, CLI docs, architecture overviews & more.
+
+---
+
+## 👨‍💻 Author
+
+**Hasan Kayan** — [hasankayan.com](https://www.hasankayan.com) · [GitHub](https://github.com/hasan-kayan)
+
+> *Build libraries, not excuses!* 📚🔥
