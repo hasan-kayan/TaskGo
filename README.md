@@ -147,18 +147,18 @@ cd Frontend && make dev      # Next.js dev
 
 ## 🛠 Backend Makefile Cheatsheet
 
-The backend ships with a feature-rich **Makefile** (`Backend/Makefile`) that wraps common developer tasks behind short, colourful commands.
+The backend ships with a feature‑rich **Makefile** (`Backend/Makefile`) that wraps common developer tasks behind short, colourful commands.
 
 ```bash
-# 1) Install/update tooling (swag, air, golangci-lint)
+# 1) Install/update tooling (swag, air, golangci‑lint)
 cd Backend && make deps
 
-# 2) Launch API with hot-reload
+# 2) Launch API with hot‑reload
 make dev
 
 # 3) Lint & test
 make lint
-make test   # includes race-detector & coverage
+make test   # includes race‑detector & coverage
 
 # 4) Container image
 make docker   # → taskgo-backend:latest
@@ -167,13 +167,13 @@ make run      # run image on $PORT (default 8080)
 
 | Target     | Description                                                               |
 | ---------- | ------------------------------------------------------------------------- |
-| `deps`     | `go mod tidy` **+** fetch **swag**, **air**, **golangci-lint** if missing |
+| `deps`     | `go mod tidy` **+** fetch **swag**, **air**, **golangci‑lint** if missing |
 | `docs`     | Regenerate Swagger docs into `Backend/docs/`                              |
-| `dev`      | Start the API with live-reload (Air) – falls back to `go run .`           |
-| `lint`     | Static checks: `go vet` + `golangci-lint run`                             |
+| `dev`      | Start the API with live‑reload (Air) – falls back to `go run .`           |
+| `lint`     | Static checks: `go vet` + `golangci‑lint run`                             |
 | `test`     | `go test -v -race -cover` across *all* packages                           |
 | `coverage` | Show text summary & hint to open HTML report                              |
-| `docker`   | Multi-stage build → **taskgo-backend\:latest** (≈14 MB)                   |
+| `docker`   | Multi‑stage build → **taskgo-backend\:latest** (≈14 MB)                   |
 | `run`      | Run container mapping `${PORT}`→8080                                      |
 | `clean`    | Delete `coverage.out` & generated Swagger artefacts                       |
 
@@ -181,7 +181,7 @@ All targets log with emoji & ANSI colours so you can *see* progress at a glance 
 
 ---
 
-## 📦 Producti
+## 📦 Production Build
 
 ```bash
 # Backend
