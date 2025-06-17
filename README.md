@@ -7,7 +7,7 @@ A monorepo combining a React/Next.js frontend with a Go backend. Spin up locally
 
 ---
 
-## 🧭 Overview
+## 🧽 Overview
 
 | App      | Stack                                 | Docs                 |
 | -------- | ------------------------------------- | -------------------- |
@@ -16,7 +16,7 @@ A monorepo combining a React/Next.js frontend with a Go backend. Spin up locally
 
 ---
 
-## 🗂️ Project Structure
+## 📂 Project Structure
 
 ```
 TaskGo/
@@ -39,7 +39,7 @@ Backend/
 └── Makefile        # Shortcuts (lint, test, dev…)
 ```
 
-### 🖼 Frontend Highlights
+### 🗼 Frontend Highlights
 
 ```
 Frontend/
@@ -49,7 +49,6 @@ Frontend/
 ├── test/           # Vitest + Testing Library
 ├── public/         # Icons & static assets
 ├── Dockerfile      # Alpine Node → Nginx build
-└── Makefile        # Lint/test/dev helpers
 ```
 
 ---
@@ -74,13 +73,13 @@ NEXT_PUBLIC_API_URL=http://localhost:8080
 NEXT_PUBLIC_APP_PORT=3000
 ```
 
-> 📝 Ports auto-applied by Docker Compose
+> 📜 Ports auto-applied by Docker Compose
 
 ---
 
-## 🧪 Local Development
+## 🤪 Local Development
 
-### 🔨 Requirements
+### 🛠 Requirements
 
 * Docker 24+
 * Docker Compose v2
@@ -106,7 +105,7 @@ make up  # = docker compose up --build -d
 
 ```bash
 cd Backend && make dev       # Air (Go)
-cd Frontend && make dev      # Next.js dev
+cd Frontend && yarn dev      # Next.js dev
 ```
 
 ---
@@ -135,13 +134,13 @@ cd Frontend && make dev      # Next.js dev
 
 ## ⚙️ Make Commands (Root)
 
-| Command     | Action                                      |
-| ----------- | ------------------------------------------- |
-| `make up`   | `docker compose up --build -d`              |
-| `make down` | Stop and clean containers/volumes           |
-| `make lint` | Run backend (Go) + frontend (TS/ES) linters |
-| `make test` | Run backend + frontend test suites          |
-| `make e2e`  | Cypress UI end-to-end tests (headless)      |
+| Command     | Action                                 |
+| ----------- | -------------------------------------- |
+| `make up`   | `docker compose up --build -d`         |
+| `make down` | Stop and clean containers/volumes      |
+| `make lint` | Run backend (Go) linters               |
+| `make test` | Run backend test suite                 |
+| `make e2e`  | Cypress UI end-to-end tests (headless) |
 
 ---
 
@@ -158,7 +157,7 @@ make dev
 
 # 3) Lint & test
 make lint
-make test   # includes race‑detector & coverage
+test   # includes race‑detector & coverage
 
 # 4) Container image
 make docker   # → taskgo-backend:latest
@@ -170,11 +169,11 @@ make run      # run image on $PORT (default 8080)
 | `deps`     | `go mod tidy` **+** fetch **swag**, **air**, **golangci‑lint** if missing |
 | `docs`     | Regenerate Swagger docs into `Backend/docs/`                              |
 | `dev`      | Start the API with live‑reload (Air) – falls back to `go run .`           |
-| `lint`     | Static checks: `go vet` + `golangci‑lint run`                             |
+| `lint`     | Static checks: `go vet` + `golangci‑lint run`                             |
 | `test`     | `go test -v -race -cover` across *all* packages                           |
 | `coverage` | Show text summary & hint to open HTML report                              |
-| `docker`   | Multi‑stage build → **taskgo-backend\:latest** (≈14 MB)                   |
-| `run`      | Run container mapping `${PORT}`→8080                                      |
+| `docker`   | Multi‑stage build → **taskgo-backend\:latest** (approx. 14MB)             |
+| `run`      | Run container mapping `${PORT}` → 8080                                    |
 | `clean`    | Delete `coverage.out` & generated Swagger artefacts                       |
 
 All targets log with emoji & ANSI colours so you can *see* progress at a glance 🎉
@@ -188,7 +187,7 @@ All targets log with emoji & ANSI colours so you can *see* progress at a glance 
 cd Backend && make docker
 
 # Frontend
-cd Frontend && make docker
+cd Frontend && docker build -t taskgo-frontend:latest .
 ```
 
 Or deploy together:
@@ -201,14 +200,14 @@ CI/CD, Helm, and Kubernetes manifests are available under `/deploy/`.
 
 ---
 
-## 🧪 Testing
+## 🤪 Testing
 
 ```bash
 # Backend test & coverage
 cd Backend && make test
 
 # Frontend unit tests
-cd Frontend && make test
+cd Frontend && yarn test
 ```
 
 Contract tests live in `/docs/postman/` (collection).
