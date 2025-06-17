@@ -1,7 +1,8 @@
 // vite.config.ts
-import { defineConfig, loadEnv } from 'vitest/config';   // Vitest-aware helper
+import { defineConfig } from 'vitest/config'; // ✅ only defineConfig here
+import { loadEnv } from 'vite';               // ✅ loadEnv comes from vite
 import react from '@vitejs/plugin-react';
-import tsconfigPaths from 'vite-tsconfig-paths';        // ⟵ nice to have
+import tsconfigPaths from 'vite-tsconfig-paths';
 import path from 'node:path';
 
 export default defineConfig(({ mode }) => {

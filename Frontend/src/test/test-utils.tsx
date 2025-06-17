@@ -1,8 +1,15 @@
-import { ReactElement } from 'react';
+// src/test/test-utils.tsx
 import { render } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
 import { BooksProvider } from '@/context/BooksContext';
 
-export const withProviders = (ui: ReactElement, route = '/') => {
-  window.history.pushState({}, 'Test page', route);
-  return render(ui, { wrapper: BooksProvider });
-};
+export function renderWithProviders(ui, options = {}) {
+  return render(ui, {
+    wrapper: ({ children }) => (
+      <MemoryRouter>
+        <BooksProvider>{children}</BooksProvider>
+      </MemoryRouter>
+    ),
+    ...options,
+  });
+}
