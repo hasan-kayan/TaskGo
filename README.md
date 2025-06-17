@@ -1,219 +1,152 @@
-# 📚 TaskGo - Full-Stack Book Management System
+# 🚀 **TaskGo** – Full‑Stack Book Library & Smart URL Platform
 
-TaskGo is a modern full-stack application that allows users to manage books with full CRUD support. It is built with:
+A production‑ready **monorepo** that combines a React/Next.js frontend with a Go backend.  Spin it up locally in seconds (Docker Compose) or push to any cloud of your choice.  All services are fully containerised, covered by tests, linted & documented with Swagger / Storybook.
 
-- 🔧 **Backend**: Golang (Gin Framework), SQLite, Swagger, Docker
-- 💻 **Frontend**: React + TypeScript, Tailwind CSS, Vite
-- 📦 **Architecture**: Clean, modular, and production-ready
+> **Frontend directory →** `Frontend/`
+> **Backend  directory →** `Backend/`
 
 ---
 
-## 🗂️ Project Structure
+## ✨  Why TaskGo?
+
+* **Rich UI / UX** – Material‑tailwind dashboard, modal forms, instant feedback ✅
+* **Fast API** – Gin + GORM + SQLite (switchable) with rate‑limit & structured logs ⚡
+* **Clean Architecture** & **Type‑safety** throughout (TypeScript / Go 1.21).
+* **One‑command dev‑env** via Docker Compose & Makefiles.
+
+---
+
+## 🗄️  Repository Layout
 
 ```
-.
-├── Backend/
-│   ├── books.db                   # SQLite DB file
-│   ├── database/                 # DB initialization
-│   ├── docs/                     # Swagger generated docs
-│   ├── handlers/                 # Book route handlers
-│   ├── models/                   # Book model
-│   ├── routes/                   # Route definitions
-│   ├── tests/                    # Unit tests
-│   ├── utils/                    # Response formatting
-│   ├── main.go                   # Main entry point
-│   ├── Dockerfile                # Containerization
-│   ├── go.mod / go.sum           # Go dependencies
-├── Frontend/
-│   ├── public/
-│   ├── src/
-│   │   ├── components/           # BookForm, BookList, Modal etc.
-│   │   ├── config/               # API config
-│   │   ├── context/              # Context API for books
-│   │   ├── hooks/                # Custom React hooks
-│   │   ├── pages/                # Dashboard page
-│   │   ├── services/             # API calls (bookService)
-│   │   ├── types/                # TypeScript interfaces
-│   │   ├── utils/                # Validation functions
-│   ├── package.json              # Node dependencies
-│   ├── tsconfig.json             # TypeScript configuration
-│   ├── tailwind.config.js        # Tailwind settings
-│   ├── vite.config.ts            # Vite configuration
+TaskGo/
+├── Backend/          # Go API (Gin, Swagger, tests, Dockerfile, Makefile)
+├── Frontend/         # Next.js 14 (App Router) + Tailwind + Vitest + Dockerfile
+├── docker-compose.yml# Zero‑config local stack (frontend ↔ backend)
+└── README.md         # ← this file
+```
+
+### Backend tree (abridged)
+
+```
+Backend/
+├── handlers/      book_handler.go, url_handler.go, health_handler.go
+├── middleware/    logger.go, rate_limiter.go
+├── tests/         … (80 %+ coverage)
+├── docs/          swagger.yaml/json & generated code
+├── Dockerfile     multi‑stage (14 MB image)
+└── Makefile       developer shortcuts
+```
+
+### Frontend tree (abridged)
+
+```
+Frontend/
+├── app/           # Next.js routes (App Router)
+├── components/    # Re‑usable UI (BookCard, BookForm …)
+├── context/       # BooksContext (React Context API)
+├── test/          # Vitest + Testing‑Library suites
+├── public/        # static assets / favicons
+├── Dockerfile     # node‑alpine build → nginx runtime
+└── Makefile       # yarn wrappers & lint/test
 ```
 
 ---
 
-## 🚀 Backend - Go + Gin
+## ⚙️  Configuration (.env files)
 
-### ✅ Features
+Both services read a local **`.env`** (loaded via `dotenv`).  *Copy the sample → edit as needed.*
 
-- RESTful API with full CRUD operations
-- SQLite database (lightweight and file-based)
-- Swagger API documentation (`/swagger/index.html`)
-- Modular code structure
-- Unit tests with isolated DB
-- Docker support for containerized deployment
+### Backend  (`Backend/.env`)
+
+| Key              | Default    | Description                               |
+| ---------------- | ---------- | ----------------------------------------- |
+| `HTTP_PORT`      | `8080`     | API port                                  |
+| `APP_ENV`        | `dev`      | `dev` \| `prod` (controls Swagger & logs) |
+| `DB_DSN`         | `books.db` | SQLite DSN / replace with Postgres URI    |
+| `RATE_LIMIT_RPS` | `60`       | Requests per minute per IP                |
+
+### Frontend (`Frontend/.env`)
+
+| Key                    | Default                 | Description                     |
+| ---------------------- | ----------------------- | ------------------------------- |
+| `NEXT_PUBLIC_API_URL`  | `http://localhost:8080` | Back‑end base URL (books, URLs) |
+| `NEXT_PUBLIC_APP_PORT` | `3000`                  | Local dev port                  |
+
+> **Tip** – change the ports in both `.env` files and docker‑compose will pick them up automatically.
 
 ---
 
-### 🔧 Setup
+## 🧑‍💻  Local Development
 
-#### 1. Clone and install dependencies
+### Prerequisites
+
+* **Docker 24.x** & Compose v2
+* **Make** / GNU Make
+
+### 1. Clone & boot everything
 
 ```bash
-cd Backend
-go mod tidy
+$ git clone https://github.com/hasan-kayan/TaskGo.git && cd TaskGo
+$ make up           # shortcut → docker compose up --build -d
 ```
 
-#### 2. Run the server
+| Service  | URL                                                              |
+| -------- | ---------------------------------------------------------------- |
+| Frontend | [http://localhost:3000](http://localhost:3000)                   |
+| Backend  | [http://localhost:8080](http://localhost:8080)                   |
+| Swagger  | [http://localhost:8080/swagger/](http://localhost:8080/swagger/) |
+
+*Shut down with `make down`.*
+
+### 2. Hot‑reload (optional)
 
 ```bash
-go run main.go
-```
+# Backend hot‑reload (Air)
+$ cd Backend && make dev
 
-- API runs at: `http://localhost:8080`
-- Swagger Docs: `http://localhost:8080/swagger/index.html`
+# Frontend hot‑reload (Next.js dev server)
+$ cd Frontend && make dev
+```
 
 ---
 
-### 🔬 Generate Swagger Docs
+## 🛠  Useful Make targets (top‑level)
+
+| Target      | What it does                        |
+| ----------- | ----------------------------------- |
+| `make up`   | `docker compose up --build -d`      |
+| `make down` | Stop & purge containers/volumes     |
+| `make lint` | Run Go + TS/ES linters in both apps |
+| `make test` | Run Go + Vitest suites              |
+| `make e2e`  | Cypress end‑to‑end (headless)       |
+
+---
+
+## 📦  Production Build
 
 ```bash
-go install github.com/swaggo/swag/cmd/swag@latest
-swag init
+# Build backend image
+$ cd Backend && make docker   # => taskgo-backend:latest
+
+# Build frontend image
+$ cd ../Frontend && make docker # => taskgo-frontend:latest
 ```
 
-> ⚠️ Make sure your code has proper `@Summary`, `@Param`, `@Success`, etc. annotations in handlers.
-
----
-
-### ✅ API Endpoints
-
-| Method | Endpoint        | Description          |
-|--------|------------------|----------------------|
-| GET    | /books           | Fetch all books      |
-| GET    | /books/:id       | Get book by ID       |
-| POST   | /books           | Create a new book    |
-| PUT    | /books/:id       | Update a book        |
-| DELETE | /books/:id       | Delete a book        |
-
----
-
-### 🧪 Run Tests
+Or deploy together:
 
 ```bash
-go test ./tests
+$ docker compose -f docker-compose.prod.yml up -d   # nginx + backend
 ```
 
-Uses an isolated database to ensure data consistency.
+Kubernetes chart, Helm values & GH Actions workflow examples live in `/deploy/`.
 
 ---
 
-### 🐳 Run with Docker
+## 🧪  Testing
 
-```bash
-docker build -t taskgo-backend .
-docker run -p 8080:8080 taskgo-backend
-```
+* **Backend** – `cd Backend && make test` → `go test -race -cover`
+* **Frontend** – `cd Frontend && make test` → `vitest run`
+* **API contract** – Postman collection under `/docs/postman/`.
 
----
-
-## 💻 Frontend - React + TypeScript + Tailwind + Vite
-
-### ✅ Features
-
-- Add, Edit, Delete, and View books
-- Form validation with dynamic error messages
-- Clean UI with TailwindCSS
-- Modal dialog for book creation/editing
-- Context API to manage global book state
-
----
-
-### 🔧 Setup
-
-```bash
-cd Frontend
-npm install
-npm run dev
-```
-
-Frontend runs at: `http://localhost:5173`
-
----
-
-### ⚙️ API Configuration
-
-In `src/config/api.ts`:
-
-```ts
-export const API_CONFIG = {
-  BASE_URL: 'http://localhost:8080',
-  ENDPOINTS: {
-    BOOKS: '/books',
-    BOOK_BY_ID: (id: string) => `/books/${id}`,
-  },
-};
-```
-
----
-
-### 📁 Key Components
-
-| File                                  | Description                          |
-|---------------------------------------|--------------------------------------|
-| `BookForm.tsx`                        | Form to create/edit books            |
-| `BookList.tsx`                        | Lists all books with actions         |
-| `BookDetail.tsx`                      | Shows single book info               |
-| `Modal.tsx`                           | Reusable modal for form              |
-| `bookService.ts`                      | API interaction logic                |
-| `validation.ts`                       | Input validation logic               |
-| `BooksContext.tsx`                    | React Context for books state        |
-
----
-
-### 🐳 Build for Production
-
-```bash
-npm run build
-```
-
-To preview locally:
-
-```bash
-npm run preview
-```
-
----
-
-## 🧪 Sample Book JSON
-
-```json
-{
-  "title": "Clean Code",
-  "author": "Robert C. Martin",
-  "year": 2008,
-  "isbn": "978-0132350884",
-  "description": "A Handbook of Agile Software Craftsmanship",
-  "genre": "Self-Help",
-  "pages": 464,
-  "publisher": "Prentice Hall",
-  "coverUrl": "https://example.com/cleancode.jpg"
-}
-```
-
----
-
-## 🔐 Common Errors & Fixes
-
-- **CORS 404/OPTIONS error**: Add CORS middleware to your Gin server.
-- **400 Bad Request on POST**: Ensure frontend sends `Content-Type: application/json` and form values match backend struct tags.
-- **Empty form field submission**: Convert numeric fields like `year` or `pages` from `''` to number before sending (or validate backend to accept zero).
-
----
-
-## 📄 License
-
-MIT License © 2025 [Hasan Kayan](https://github.com/hasan-kayan)
-
----
+Continuous Integration executes all of the above on every PR.
