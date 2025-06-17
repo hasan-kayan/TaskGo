@@ -5,9 +5,14 @@ import (
 	"github.com/hasan-kayan/TaskGo/models"
 )
 
-var v = validator.New()
+var validate *validator.Validate
 
-// ValidateBook runs field-level checks that GORM tags alone can’t enforce.
-func ValidateBook(b *models.Book) error {
-	return v.Struct(b)
+func init() {
+	validate = validator.New()
+}
+
+// ValidateBook performs field-level validation for the Book struct.
+// Returns an error if any field fails the defined validation rules.
+func ValidateBook(book *models.Book) error {
+	return validate.Struct(book)
 }
