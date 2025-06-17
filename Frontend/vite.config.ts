@@ -41,7 +41,7 @@ export default defineConfig(({ mode }) => {
     test: {
       globals: true,            // Jest-style API (expect, vi, etc.)
       environment: 'jsdom',     // DOM API for React components
-      setupFiles: './src/test/setup.ts',
+      setupFiles: './src/test/setup.tsx',
       coverage: {
         reporter: ['text', 'html', 'json-summary'],
         lines: 90,

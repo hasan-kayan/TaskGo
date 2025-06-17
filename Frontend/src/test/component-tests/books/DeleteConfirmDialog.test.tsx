@@ -1,54 +1,77 @@
-import { render, screen } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
+import { describe, it, expect, vi } from 'vitest';
+import { render, screen, fireEvent } from '@testing-library/react';
 import DeleteConfirmDialog from '@/components/books/DeleteConfirmDialog';
-import { Book } from '@/types/book';
+import type { Book } from '@/types/book';
 
-const dummyBook: Book = {
-  id: 5,
-  title: 'Design Patterns',
-  author: 'Erich Gamma',
-  year: 1994,
-  genre: 'Software',
-  isbn: '978-0201633610',
-  pages: 395,
-  publisher: 'Addison-Wesley',
+vi.mock('lucide-react', () => ({
+  __esModule: true,
+  AlertTriangle: () => <svg data-testid="alert-icon" />,
+}));
+
+const sampleBook: Book = {
+  id: '1',
+  title: 'Clean Code',
+  author: 'Robert C. Martin',
+  year: 2008,
+  isbn: '',
   description: '',
+  type: 'Non-fiction',
+  publisher: '',
+  genre: 'Programming',
+  pages: 464,
   coverUrl: '',
-  type: 'Non-Fiction',
+  coverImageURL: '',
+  created_at: '',
+  updated_at: '',
+  deleted_at: null,
 };
 
 describe('<DeleteConfirmDialog />', () => {
-  it('invokes callbacks on user actions', async () => {
-    const user = userEvent.setup();
-    const onConfirm = vi.fn();
-    const onCancel = vi.fn();
-
+  it('renders title, author, and icon', () => {
     render(
       <DeleteConfirmDialog
-        book={dummyBook}
-        onConfirm={onConfirm}
-        onCancel={onCancel}
-      />,
+        book={sampleBook}
+        onCancel={vi.fn()}
+        onConfirm={vi.fn()}
+      />
     );
 
-    await user.click(screen.getByRole('button', { name: /cancel/i }));
-    await user.click(screen.getByRole('button', { name: /delete book/i }));
-
-    expect(onCancel).toHaveBeenCalledTimes(1);
-    expect(onConfirm).toHaveBeenCalledTimes(1);
+    expect(screen.getByRole('heading', { name: /delete book/i })).toBeInTheDocument();
+    expect(screen.getByText(/clean code/i)).toBeInTheDocument();
+    expect(screen.getByText(/robert c\. martin/i)).toBeInTheDocument();
+    expect(screen.getByTestId('alert-icon')).toBeInTheDocument();
   });
 
-  it('shows loading state when isLoading=true', () => {
+  it('calls onCancel and onConfirm correctly', () => {
+    const onCancel = vi.fn();
+    const onConfirm = vi.fn();
+
     render(
       <DeleteConfirmDialog
-        book={dummyBook}
-        onConfirm={vi.fn()}
-        onCancel={vi.fn()}
-        isLoading
-      />,
+        book={sampleBook}
+        onCancel={onCancel}
+        onConfirm={onConfirm}
+      />
     );
 
-    const deleteBtn = screen.getByRole('button', { name: /deleting/i });
-    expect(deleteBtn).toBeDisabled();
+    fireEvent.click(screen.getByRole('button', { name: /cancel/i }));
+    fireEvent.click(screen.getByRole('button', { name: /delete book/i }));
+
+    expect(onCancel).toHaveBeenCalledOnce();
+    expect(onConfirm).toHaveBeenCalledOnce();
+  });
+
+  it('disables buttons and shows "Deleting..." when isLoading is true', () => {
+    render(
+      <DeleteConfirmDialog
+        book={sampleBook}
+        onCancel={vi.fn()}
+        onConfirm={vi.fn()}
+        isLoading={true}
+      />
+    );
+
+    expect(screen.getByRole('button', { name: /deleting/i })).toBeDisabled();
+    expect(screen.getByRole('button', { name: /cancel/i })).toBeDisabled();
   });
 });

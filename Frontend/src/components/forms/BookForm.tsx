@@ -15,42 +15,39 @@ interface BookFormProps {
   isLoading?: boolean;
 }
 
-/* ────────────────────────────────────────────────────────────────── */
-
 const BookForm: React.FC<BookFormProps> = ({
   book,
   onSubmit,
   onCancel,
   isLoading = false,
 }) => {
-  /* ---- pull books from context to get existing types ---- */
+  /* ───────────────────────────────────────── context ─── */
   const { books } = useBooks();
 
-  /* ---- derive unique types from existing books ---- */
   const uniqueTypes = Array.from(
     new Set(
       books
         .map((b) => b.type)
-        .filter((t): t is string => Boolean(t && t.trim()))
-    )
+        .filter((t): t is string => Boolean(t?.trim())),
+    ),
   );
 
-  /* ---- fallback list if none found ---- */
-  const fallbackTypes = [
-    'Fiction',
-    'Non-Fiction',
-    'Mystery',
-    'Romance',
-    'Science Fiction',
-    'Fantasy',
-    'Biography',
-    'History',
-    'Self-Help',
-    'Business',
-  ];
-  const typeOptions = uniqueTypes.length ? uniqueTypes : fallbackTypes;
+  const typeOptions = uniqueTypes.length
+    ? uniqueTypes
+    : [
+        'Fiction',
+        'Non-Fiction',
+        'Mystery',
+        'Romance',
+        'Science Fiction',
+        'Fantasy',
+        'Biography',
+        'History',
+        'Self-Help',
+        'Business',
+      ];
 
-  /* ---- local form state ---- */
+  /* ───────────────────────────────────────── state ─── */
   const [formData, setFormData] = useState({
     title: '',
     author: '',
@@ -62,43 +59,45 @@ const BookForm: React.FC<BookFormProps> = ({
     publisher: '',
     coverImageURL: '',
   });
-
   const [errors, setErrors] = useState<ValidationErrors>({});
   const [touched, setTouched] = useState<Record<string, boolean>>({});
 
-  /* ---- hydrate when editing ---- */
+  /* ───────────────────────────── hydrate for edit ─── */
   useEffect(() => {
-    if (book) {
-      setFormData({
-        title: book.title || '',
-        author: book.author || '',
-        year: book.year?.toString() || '',
-        isbn: book.isbn || '',
-        description: book.description || '',
-        type: book.type || '',
-        pages: book.pages?.toString() || '',
-        publisher: book.publisher || '',
-        coverImageURL: book.coverImageURL || '',
-      });
-    }
+    if (!book) return;
+    setFormData({
+      title: book.title ?? '',
+      author: book.author ?? '',
+      year: book.year?.toString() ?? '',
+      isbn: book.isbn ?? '',
+      description: book.description ?? '',
+      type: book.type ?? '',
+      pages: book.pages?.toString() ?? '',
+      publisher: book.publisher ?? '',
+      coverImageURL: book.coverImageURL ?? '',
+    });
   }, [book]);
 
-  /* ---- handlers ---- */
+  /* ───────────────────────────── handlers ─── */
   const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+    >,
   ) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-    if (errors[name]) setErrors((prev) => ({ ...prev, [name]: '' }));
+    setFormData((s) => ({ ...s, [name]: value }));
+    if (errors[name]) setErrors((s) => ({ ...s, [name]: '' }));
   };
 
   const handleBlur = (
-    e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+    e: React.FocusEvent<
+      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+    >,
   ) => {
     const { name } = e.target;
-    setTouched((prev) => ({ ...prev, [name]: true }));
+    setTouched((t) => ({ ...t, [name]: true }));
     const fieldErrs = validateBook({ ...formData, [name]: formData[name] });
-    if (fieldErrs[name]) setErrors((prev) => ({ ...prev, [name]: fieldErrs[name] }));
+    if (fieldErrs[name]) setErrors((s) => ({ ...s, [name]: fieldErrs[name] }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -106,36 +105,39 @@ const BookForm: React.FC<BookFormProps> = ({
     const validationErrors = validateBook(formData);
     setErrors(validationErrors);
 
-    if (!hasValidationErrors(validationErrors)) {
-      const payload: BookFormData = {
-        title: formData.title,
-        author: formData.author,
-        year: parseInt(formData.year) || 0,
-        isbn: formData.isbn || undefined,
-        description: formData.description || undefined,
-        type: formData.type || undefined,
-        pages: formData.pages ? parseInt(formData.pages) : undefined,
-        publisher: formData.publisher || undefined,
-        coverImageURL: formData.coverImageURL || undefined,
-      };
+    if (hasValidationErrors(validationErrors)) return;
 
-      try {
-        await onSubmit(payload);
-      } catch (err) {
-        console.error('Submit error:', err);
-      }
-    }
+    const payload: BookFormData = {
+      title: formData.title.trim(),
+      author: formData.author.trim(),
+      year: Number(formData.year) || 0,
+      isbn: formData.isbn || undefined,
+      description: formData.description || undefined,
+      type: formData.type || undefined,
+      pages: formData.pages ? Number(formData.pages) : undefined,
+      publisher: formData.publisher || undefined,
+      coverImageURL: formData.coverImageURL || undefined,
+    };
+
+    await onSubmit(payload);
   };
 
   const inputClass = (field: string) =>
     `w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${
-      errors[field] && touched[field] ? 'border-red-500 bg-red-50' : 'border-gray-300'
+      errors[field] && touched[field]
+        ? 'border-red-500 bg-red-50'
+        : 'border-gray-300'
     }`;
 
-  /* ---- render ---- */
+  /* ───────────────────────────────────────── render ─── */
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      {/* grid */}
+    <form
+      onSubmit={handleSubmit}
+      noValidate
+      className="space-y-4"
+      data-testid="book-form"
+    >
+      {/* === grid === */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Title */}
         <div>
@@ -152,7 +154,9 @@ const BookForm: React.FC<BookFormProps> = ({
             disabled={isLoading}
           />
           {errors.title && touched.title && (
-            <p className="text-sm text-red-600">{errors.title}</p>
+            <p role="alert" className="text-sm text-red-600">
+              {errors.title}
+            </p>
           )}
         </div>
 
@@ -171,7 +175,9 @@ const BookForm: React.FC<BookFormProps> = ({
             disabled={isLoading}
           />
           {errors.author && touched.author && (
-            <p className="text-sm text-red-600">{errors.author}</p>
+            <p role="alert" className="text-sm text-red-600">
+              {errors.author}
+            </p>
           )}
         </div>
 
@@ -191,10 +197,13 @@ const BookForm: React.FC<BookFormProps> = ({
             disabled={isLoading}
           />
           {errors.year && touched.year && (
-            <p className="text-sm text-red-600">{errors.year}</p>
+            <p role="alert" className="text-sm text-red-600">
+              {errors.year}
+            </p>
           )}
         </div>
 
+        {/* --- OPTIONAL FIELDS --- */}
         {/* ISBN */}
         <div>
           <label htmlFor="isbn" className="block text-sm font-medium mb-1">
@@ -265,7 +274,10 @@ const BookForm: React.FC<BookFormProps> = ({
 
         {/* Cover URL */}
         <div>
-          <label htmlFor="coverImageURL" className="block text-sm font-medium mb-1">
+          <label
+            htmlFor="coverImageURL"
+            className="block text-sm font-medium mb-1"
+          >
             Cover URL
           </label>
           <input

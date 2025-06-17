@@ -1,82 +1,67 @@
-import { render, screen, fireEvent } from '@testing-library/react';
-import { describe, it, expect, vi } from 'vitest';
-import BookList from '@/components/books/BookList';
-import { Book } from '@/types/book';
+import { describe, it, expect } from 'vitest';
+import { render, screen } from '@testing-library/react';
+import BookDetail from '@/components/books/BookDetail';
+import type { Book } from '@/types/book';
 
-const mockBooks: Book[] = [
-  {
-    id: '1',
-    title: 'Clean Code',
-    author: 'Robert C. Martin',
-    year: 2008,
-    genre: 'Programming',
-    description: 'A Handbook of Agile Software Craftsmanship',
-    coverUrl: 'https://example.com/clean-code.jpg',
-  },
-  {
-    id: '2',
-    title: 'Refactoring',
-    author: 'Martin Fowler',
-    year: 1999,
-    genre: 'Software Engineering',
-    description: 'Improving the design of existing code.',
-    coverUrl: 'https://example.com/refactoring.jpg',
-  },
-];
+vi.mock('lucide-react', () => {
+  const Mock = () => <svg data-testid="icon" />;
+  return {
+    __esModule: true,
+    Book: Mock,
+    User: Mock,
+    Calendar: Mock,
+    Hash: Mock,
+    FileText: Mock,
+    Bookmark: Mock,
+    Building: Mock,
+    Image: Mock,
+  };
+});
 
-describe('BookList', () => {
-  it('renders list of books correctly', () => {
-    render(
-      <BookList
-        books={mockBooks}
-        onEdit={vi.fn()}
-        onDelete={vi.fn()}
-        onView={vi.fn()}
-      />
-    );
+const sampleBook: Book = {
+  id: '1',
+  title: 'Clean Architecture',
+  author: 'Robert C. Martin',
+  year: 2017,
+  isbn: '9780134494166',
+  description: 'A guide to software structure and independence.',
+  type: 'Non-fiction',
+  publisher: 'Pearson',
+  genre: 'Software Engineering',
+  pages: 432,
+  coverUrl: '',
+  coverImageURL: '',
+  created_at: '',
+  updated_at: '',
+  deleted_at: null,
+};
 
-    mockBooks.forEach((book) => {
-      expect(screen.getByText(book.title)).toBeInTheDocument();
-      expect(screen.getByText(book.author)).toBeInTheDocument();
-    });
-  });
+describe('<BookDetail />', () => {
+  it('renders book title and author', () => {
+    render(<BookDetail book={sampleBook} />);
 
-  it('handles onEdit and onDelete callbacks', () => {
-    const onEdit = vi.fn();
-    const onDelete = vi.fn();
-    const onView = vi.fn();
-
-    render(
-      <BookList
-        books={mockBooks}
-        onEdit={onEdit}
-        onDelete={onDelete}
-        onView={onView}
-      />
-    );
-
-    // Click edit and delete buttons on the first book
-    const editButton = screen.getAllByTitle('Edit Book')[0];
-    const deleteButton = screen.getAllByTitle('Delete Book')[0];
-    const viewButton = screen.getAllByText('View')[0];
-
-    fireEvent.click(editButton);
-    fireEvent.click(deleteButton);
-    fireEvent.click(viewButton);
-
-    expect(onEdit).toHaveBeenCalledWith(mockBooks[0]);
-    expect(onDelete).toHaveBeenCalledWith(mockBooks[0]);
-    expect(onView).toHaveBeenCalledWith(mockBooks[0]);
-  });
-
-  it('renders a message if no books are provided', () => {
-    render(
-      <BookList books={[]} onEdit={vi.fn()} onDelete={vi.fn()} onView={vi.fn()} />
-    );
-
+    // Başlık: semantik heading ile
     expect(
-      screen.getByText(/no books to display/i)
+      screen.getByRole('heading', { name: /clean architecture/i }),
     ).toBeInTheDocument();
+
+    // Yazar: iki kez görünür (üst başlık + detay grid)
+    expect(
+      screen.getAllByText(/robert c\. martin/i),
+    ).toHaveLength(2);
+  });
+
+  it('renders all detail fields', () => {
+    render(<BookDetail book={sampleBook} />);
+    expect(screen.getByText('2017')).toBeInTheDocument();
+    expect(screen.getByText('9780134494166')).toBeInTheDocument();
+    expect(screen.getByText('Software Engineering')).toBeInTheDocument();
+    expect(screen.getByText('432')).toBeInTheDocument();
+    expect(screen.getByText('Pearson')).toBeInTheDocument();
+  });
+
+  it('renders description if present', () => {
+    render(<BookDetail book={sampleBook} />);
+    expect(screen.getByText(/a guide to software structure/i)).toBeInTheDocument();
   });
 });
-  

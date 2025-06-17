@@ -76,3 +76,5 @@ export const useBooks = () => {
   }
   return context;
 };
+
+export { BooksContext }; // Bu olmadan context dışa aktarılamaz
