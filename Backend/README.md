@@ -1,225 +1,208 @@
-# 📚 TaskGo – Backend Service for Book Management & URL Processing (Golang)
+# 📚 **TaskGo Backend** – Book Library & Smart URL Processing API
 
-TaskGo is a robust and extensible backend API built in **Go**, designed to manage a library of books and process URLs intelligently. It uses modern tools and clean architecture principles to provide high-performance RESTful services with built-in validations, logging, rate limiting, and Swagger documentation.
-
----
-
-## 🚀 Features
-
-### 📘 Book Management API
-- Full CRUD (Create, Read, Update, Delete) support for books
-- UUID as primary key for all books
-- Advanced filtering by `title`, `author`, `year`, and `type`
-- Field validations and error handling
-- Interactive Swagger UI for testing
-- Structured JSON responses
-- Pagination-ready architecture
-
-### 🔗 Smart URL Processor API
-- Canonicalization of URLs: removes query parameters and trailing slashes
-- Redirection formatting: converts domain to `www.byfood.com`, lowercases the path
-- Combined operation: applies both transformations
-- Flexible operation control via request body
+A production‑ready REST service written in **Go 1.21**, offering full‑fledged CRUD endpoints for managing books **plus** a smart URL‑cleanup/redirection endpoint, wrapped with modern tooling (GORM, Gin, Logrus, Swagger) and delivered as a tiny Docker image.
 
 ---
 
-## ⚙️ Tech Stack
+## 🌟  Highlights
 
-| Tool         | Purpose                                |
-|--------------|----------------------------------------|
-| **Go (Golang)**  | Main programming language               |
-| **Gin**       | High-performance HTTP router            |
-| **GORM**      | ORM for SQLite with UUID support        |
-| **SQLite**    | Lightweight embedded database           |
-| **Logrus**    | Structured JSON logging system          |
-| **Swag**      | Swagger/OpenAPI 2.0 generation          |
-| **Validator** | Input validation using struct tags      |
-| **RateLimiter**| Custom middleware to throttle clients  |
-| **Docker**    | Containerized development & deployment  |
+| 🔑 Feature            | 💬  Description                                                                                                   |
+| --------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| **Book CRUD**         | Create / Read / Update / Delete books, UUID primary keys, advanced filtering (`title`, `author`, `year`, `type`). |
+| **URL Processor**     | One endpoint that canonicalises / redirects URLs (`canonical`, `redirection`, or `all`).                          |
+| **Strong validation** | `go-playground/validator` + Gin binding tags on models.                                                           |
+| **Middlewares**       | Structured JSON logging (Logrus) & IP‑based rate‑limiter (token bucket, 60 req/min).                              |
+| **Swagger UI**        | Auto‑generated docs served at `/swagger/index.html`.                                                              |
+| **100 % Dockerised**  | Multi‑stage build – final scratch image ≈ 14 MB.                                                                  |
+| **Extensive tests**   | Unit + integration tests for handlers, filters, rate‑limiter & helpers (🎯 80 %+ coverage).                       |
 
 ---
 
-## 📁 Project Structure
+## 🗂  Project Structure
 
+```
 Backend/
-├── books.db # SQLite database file
-├── main.go # App entry point
-├── go.mod / go.sum # Dependencies
-├── Dockerfile # Docker container config
-├── database/ # DB initialization
-│ └── db.go
-├── handlers/ # Route handlers
-│ ├── book_handler.go
-│ ├── url_handler.go
-│ └── health_handler.go
-├── middleware/ # Custom middlewares
-│ ├── logger.go
-│ └── rate_limiter.go
-├── models/ # GORM models
-│ └── book.go
-├── routes/ # Route definitions
-│ └── routes.go
-├── utils/ # Reusable helper logic
-│ ├── response.go
-│ └── validation.go
-├── docs/ # Swagger documentation
-│ ├── docs.go
-│ ├── swagger.yaml
-│ └── swagger.json
-├── tests/ # Unit tests
-│ ├── book_test.go
-│ ├── url_test.go
-│ └── books.db
-└── README.md
+├── books.db                # SQLite database (dev)
+├── database/
+│   └── db.go               # DB connection & AutoMigrate
+├── handlers/               # Gin HTTP handlers
+│   ├── book_handler.go
+│   ├── url_handler.go
+│   └── health_handler.go
+├── middleware/             # Custom middlewares
+│   ├── logger.go
+│   └── rate_limiter.go
+├── models/                 # GORM models & custom validators
+│   └── book.go
+├── routes/
+│   └── routes.go           # Route grouping
+├── utils/                  # Helpers (responses, validation)
+│   ├── response.go
+│   └── validation.go
+├── docs/                   # Swagger 2.0 generated files
+│   ├── docs.go
+│   ├── swagger.yaml
+│   └── swagger.json
+├── tests/                  # Go test‑suites (httptest + temp DB)
+│   └── …
+├── Dockerfile              # Multi‑stage container build
+├── Makefile                # Developer shortcuts
+├── main.go                 # Application entry‑point
+└── README.md               # ← you are here
+```
 
-
+> **Tip** – SQLite is default; switch to Postgres/MySQL by changing `DB_DSN` and the `gorm.Open` driver.
 
 ---
 
-## 🛠️ Getting Started
+## ⚙️  Setup & Run (Local)
 
-### ✅ Prerequisites
+### Prerequisites
 
-- Go 1.20 or higher
-- Git
-- (Optional) Docker
-- [Swag CLI](https://github.com/swaggo/swag) for Swagger generation:
-```bash
-go install github.com/swaggo/swag/cmd/swag@latest
+* Go **1.21**+
+* Git
+* (optional) Docker **24.x**
 
-
-```
-
-### 🚀 Run the Project
-```bash 
-
-# Clone Repostory
- git clone https://github.com/hasan-kayan/TaskGo.git
- cd TaskGo/Backend
- # Install Dependencies
- go mod tidy
- # Generate Swagger Docs
- swag init --parseDependency --parseInternal
- 
- #Start the Server 
- go run main.go
-```
-
-🟢 Server runs at: http://localhost:8080
-📘 Swagger UI: http://localhost:8080/swagger/index.html
-
-
-### 🧪 Run Tests
-
-For tests and some other subprocesses I have created a general purpose Makefile.
+### Quick start
 
 ```bash
-make test
+# clone & enter
+$ git clone https://github.com/hasan-kayan/TaskGo.git
+$ cd TaskGo/Backend
+
+# install Go deps & swag CLI
+$ make deps             # = go mod tidy + swag install
+
+# generate Swagger docs
+$ make docs             # = swag init --parseDependency --parseInternal
+
+# run with hot‑reload (requires air)
+$ make dev              # = air -c .air.toml (see Makefile)
+# └── API on http://localhost:8080
+# └── Swagger UI on http://localhost:8080/swagger/index.html
 ```
 
+---
 
-Test coverage includes:
-
-- Book CRUD operations  
-- URL processing logic  
-- Input validations and edge cases
-
-## 🧾 API Endpoints Overview
-
-### 📗 Book Endpoints
-
-| Method | Endpoint     | Description                 |
-|--------|--------------|-----------------------------|
-| GET    | `/books`     | List all books with filters |
-| POST   | `/books`     | Create a new book           |
-| GET    | `/books/:id` | Get book by UUID            |
-| PUT    | `/books/:id` | Update book by UUID         |
-| DELETE | `/books/:id` | Delete book by UUID         |
-
-🔍 **Query Filters Example**
+## 🐳  Run with Docker
 
 ```bash
-GET /books?title=clean&author=martin&year=2008&type=programming
+# build image (~14 MB)
+$ docker build -t taskgo-backend .
 
+# run & persist DB to named volume
+$ docker run -d -p 8080:8080 \
+    -e APP_ENV=prod \
+    --name taskgo \
+    -v taskgo_data:/data taskgo-backend
 ```
 
-📘 Example Book Payload
+Kubernetes/Helm snippet (values.yaml):
 
+```yaml
+image:
+  repository: ghcr.io/hasan-kayan/taskgo-backend
+  tag: "v1.0.0"
+resources:
+  limits:
+    cpu: 250m
+    memory: 128Mi
+  requests:
+    cpu: 50m
+    memory: 64Mi
+```
+
+---
+
+## 🔌  API Endpoints
+
+### Book Service
+
+| Method | Path          | Query / Body                | Description         |
+| ------ | ------------- | --------------------------- | ------------------- |
+| GET    | `/books`      | `title, author, year, type` | List / filter books |
+| POST   | `/books`      | Book JSON                   | Create new book     |
+| GET    | `/books/{id}` | –                           | Fetch by UUID       |
+| PUT    | `/books/{id}` | Book JSON                   | Update              |
+| DELETE | `/books/{id}` | –                           | Delete              |
+
+**Sample CREATE request**
+
+```json
+POST /books
 {
   "title": "Clean Code",
   "author": "Robert C. Martin",
   "year": 2008,
   "isbn": "9780132350884",
-  "description": "A Handbook of Agile Software Craftsmanship",
   "type": "Programming",
-  "pages": 464,
-  "publisher": "Prentice Hall",
-  "coverImageURL": "https://example.com/image.jpg"
+  "pages": 464
 }
+```
 
+### URL Processor
 
+| Method | Path           | Body                                                    | Description             |
+| ------ | -------------- | ------------------------------------------------------- | ----------------------- |
+| POST   | `/process-url` | `{ "url": "https://BYFOOD.com/…", "operation": "all" }` | Canonicalise / redirect |
 
+Example (operation **all**):
 
+```json
+{
+  "url": "https://BYFOOD.com/food-EXPeriences?query=abc/",
+  "operation": "all"
+}
+→ 200 OK
+{
+  "processed_url": "https://www.byfood.com/food-experiences"
+}
+```
 
-### 🔗 URL Processor Endpoint
+### Health
 
-| Method | Endpoint       | Description               |
-| ------ | -------------- | ------------------------- |
-| POST   | `/process-url` | Process and transform URL |
+\| GET | `/health` | – | Liveness probe returns `{ "status": "ok" }` |
 
+Full OpenAPI spec at `/swagger/index.html`.
 
-📤 Request Payload
+---
+
+## 🧪  Testing
+
+Tests live under **tests/** and spin up a temp SQLite file.
 
 ```bash
-{
-  "url": "https://BYFOOD.com/page?ref=abc/",
-  "operation": "all"  // canonical | redirection | all
-}
+# run all with race detector & coverage
+$ make test   # = go test ./... -race -coverprofile=coverage.out
 
+# view coverage
+$ go tool cover -html=coverage.out
 ```
 
-✅ Output
+Continuous Integration (GitHub Actions) runs `go vet`, static‑analysis and tests on every PR.
 
-```bash 
-{
-  "original": "https://BYFOOD.com/page?ref=abc/",
-  "processed": "https://www.byfood.com/page"
-}
+---
 
-```
+## 🔧  Configuration (ENV)
 
+| Variable         | Default    | Purpose                                                 |
+| ---------------- | ---------- | ------------------------------------------------------- |
+| `APP_ENV`        | `dev`      | `dev` shows Swagger & pretty logs                       |
+| `HTTP_PORT`      | `8080`     | Port to bind                                            |
+| `DB_DSN`         | `books.db` | SQLite DSN; e.g. `file::memory:?cache=shared` for tests |
+| `RATE_LIMIT_RPS` | `60`       | Requests per minute per IP                              |
 
-🧠 Operations
+`.env` files are loaded automatically if present (leveraging `joho/godotenv`).
 
-| Name          | Behavior                                                 |
-| ------------- | -------------------------------------------------------- |
-| `canonical`   | Removes query parameters, trailing slashes               |
-| `redirection` | Lowercases path, standardizes domain to `www.byfood.com` |
-| `all`         | Applies both canonical and redirection transformations   |
+---
 
+## 🛠  Makefile Targets
 
-## 🐳 Docker Support
-
-You can containerize and run the app using Docker:
-
-```bash 
-
-docker build -t taskgo-backend .
-docker run -p 8080:8080 taskgo-backend
-
-```
-## 📖 Swagger API Docs
-Auto-generated OpenAPI 2.0 documentation available at:
-
-```bash
-http://localhost:8080/swagger/index.html
-```
-You can also export the Swagger JSON/YAML from the docs/ directory and use it in tools like:
-
-    Swagger Editor
-
-    Postman
-
-    PDF Generator tools
-
+| Command       | Action                           |
+| ------------- | -------------------------------- |
+| `make deps`   | Install Go deps + swag + linters |
+| `make docs`   | Regenerate Swagger files         |
+| `make dev`    | Run with hot‑reload (Air)        |
+| `make test`   | Run tests + coverage             |
+| `make docker` | Build Docker image               |
 
